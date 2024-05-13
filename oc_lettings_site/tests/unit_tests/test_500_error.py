@@ -1,12 +1,21 @@
-from django.test import TestCase, Client
+from django.test import TestCase, RequestFactory
+from django.urls import reverse
+from django.template.loader import get_template
 
-from django.http import HttpResponseServerError
-"""
-class Handler500Tests(TestCase):
-    def test_handler500(self):
-        client = Client()
-        response = client.get('/url-that-triggers-500/')
+from oc_lettings_site.views import handler500
+
+class ErrorViewTest(TestCase):
+    def setUp(self):
+        self.factory = RequestFactory()
+
+    def test_500_view(self):
+        request = self.factory.get(reverse('index'))
+        response = handler500(request)
+
         self.assertEqual(response.status_code, 500)
-        self.assertTemplateUsed(response, 'errors/500.html')
-
-"""
+        
+        template = get_template('errors/500.html')
+        rendered_template = template.render()
+        
+        self.assertIn(rendered_template, response.content.decode())
+        

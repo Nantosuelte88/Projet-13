@@ -15,9 +15,3 @@ def handler404(request, exception):
 
 def handler500(request):
     return render(request, 'errors/500.html', status=500)
-
-
-
-def trigger_500(request):
-    # Lève une exception 500
-    raise Exception("This is a test exception for 500 error handler")

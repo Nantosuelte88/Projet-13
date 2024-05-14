@@ -1,8 +1,25 @@
+"""
+Script de gestion pour le projet OC Lettings.
+
+Ce script est utilisé pour gérer différentes tâches de gestion du projet OC Lettings,
+telles que le démarrage du serveur de développement Django et l'exécution des commandes
+de gestion Django.
+Il définit également les paramètres d'environnement pour les paramètres Django spécifiques
+à ce projet.
+"""
+
 import os
 import sys
 
 
 def main():
+    """
+    Fonction principale du script manage.py.
+
+    Cette fonction définit les paramètres d'environnement pour les paramètres Django spécifiques
+    à ce projet
+    et exécute les commandes de gestion Django à partir de la ligne de commande.
+    """
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'oc_lettings_site.settings')
     try:
         from django.core.management import execute_from_command_line

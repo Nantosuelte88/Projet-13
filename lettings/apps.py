@@ -1,3 +1,7 @@
+"""
+Ce module contient la configuration de l'application "lettings".
+"""
+
 from django.apps import AppConfig
 
 

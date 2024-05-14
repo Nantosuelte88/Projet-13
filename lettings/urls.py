@@ -1,5 +1,8 @@
-from django.urls import path
+"""
+Ce module définit les URL pour l'application "lettings".
+"""
 
+from django.urls import path
 from . import views
 
 app_name = 'lettings'

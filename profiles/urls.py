@@ -1,3 +1,7 @@
+"""
+Ce module définit les URL pour l'application "profiles".
+"""
+
 from django.urls import path
 
 from . import views

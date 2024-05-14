@@ -1,3 +1,7 @@
+"""
+Fichier de configuration des paramètres pour le site OC Lettings.
+"""
+
 import os
 
 from pathlib import Path

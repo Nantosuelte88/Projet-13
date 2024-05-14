@@ -1,12 +1,22 @@
+"""
+Module de tests unitaires pour la vue d'une location spécifique.
+"""
+
 from lettings.models import Letting, Address
 
 from django.test import TestCase
 from django.urls import reverse
 
-from lettings.views import index, letting
 
 class LettingsViewTest(TestCase):
+    """
+    Classe de tests unitaires pour la vue d'une location spécifique.
+    """
+
     def test_letting_view(self):
+        """
+        Teste la vue d'une location spécifique.
+        """
         address = Address.objects.create(number=123, street='Test Street', city='Test City',
                                          state='TS', zip_code=12345, country_iso_code='TST')
         letting = Letting.objects.create(title='Test Letting', address=address)

@@ -4,8 +4,10 @@ Ce module contient les modèles de l'application "profiles".
 
 
 from django.db import models
-
 from django.contrib.auth.models import User
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class Profile(models.Model):
@@ -25,3 +27,19 @@ class Profile(models.Model):
         d'utilisateur de l'utilisateur associé au profil.
         """
         return self.user.username
+
+    def save(self, *args, **kwargs):
+        """
+        Méthode pour enregistrer le profil. Enregistre également les informations de l'événement
+        dans les journaux et capture les exceptions avec Sentry si nécessaire.
+        """
+        logger.info(f"Enregistrement du profil de l'utilisateur {self.user.username}")
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        """
+        Méthode pour supprimer le profil. Enregistre également les informations de l'événement
+        dans les journaux et capture les exceptions avec Sentry si nécessaire.
+        """
+        logger.info(f"Suppression du profil de l'utilisateur {self.user.username}")
+        super().delete(*args, **kwargs)

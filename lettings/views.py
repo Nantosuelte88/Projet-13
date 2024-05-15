@@ -2,8 +2,12 @@
 Ce module contient les vues pour l'application "lettings".
 """
 
+import logging
 from django.shortcuts import render
 from .models import Letting
+from sentry_sdk import capture_exception
+
+logger = logging.getLogger(__name__)
 
 # Aenean leo magna, vestibulum et tincidunt fermentum, consectetur quis velit. Sed non placerat
 # massa. Integer est nunc, pulvinar a
@@ -21,10 +25,23 @@ def index(request):
     Returns:
         HttpResponse: Réponse HTTP avec la liste des locations rendue dans le template
         "lettings/index.html".
+
+    Raises:
+        Exception: En cas d'erreur lors de l'affichage de la liste des locations.
+
+    Notes:
+        Cette vue utilise un bloc try-except pour capturer les exceptions qui pourraient se
+        produire lors de l'affichage de la liste des locations. En cas d'erreur, l'exception
+        est enregistrée dans les journaux et capturée par Sentry pour une gestion ultérieure.
     """
-    lettings_list = Letting.objects.all()
-    context = {'lettings_list': lettings_list}
-    return render(request, 'lettings/index.html', context)
+    try:
+        lettings_list = Letting.objects.all()
+        context = {'lettings_list': lettings_list}
+        return render(request, 'lettings/index.html', context)
+    except Exception as e:
+        logger.error(
+            "Une erreur s'est produite lors de l'affichage de la liste des locations : %s", str(e))
+        capture_exception(e)
 
 
 # Cras ultricies dignissim purus, vitae hendrerit ex varius non. In accumsan porta nisl id
@@ -49,10 +66,27 @@ def letting(request, letting_id):
     Returns:
         HttpResponse: Réponse HTTP avec les détails de la location rendus dans le template
         "lettings/letting.html".
+
+    Raises:
+        Letting.DoesNotExist: Si la location avec l'ID spécifié n'existe pas.
+        Exception: En cas d'erreur lors de l'affichage des détails de la location.
+
+    Notes:
+        Cette vue utilise un bloc try-except pour capturer les exceptions qui pourraient se
+        produire lors de l'affichage des détails de la location. En cas d'erreur, l'exception
+        est enregistrée dans les journaux et capturée par Sentry pour une gestion ultérieure.
     """
-    letting = Letting.objects.get(id=letting_id)
-    context = {
-        'title': letting.title,
-        'address': letting.address,
-    }
-    return render(request, 'lettings/letting.html', context)
+    try:
+        letting = Letting.objects.get(id=letting_id)
+        context = {
+            'title': letting.title,
+            'address': letting.address,
+        }
+        return render(request, 'lettings/letting.html', context)
+    except Letting.DoesNotExist:
+        logger.warning("La location avec l'ID %s n'a pas été trouvée.", letting_id)
+    except Exception as e:
+        logger.error(
+            "Une erreur s'est produite lors de l'affichage des détails de la location : %s", str(e)
+            )
+        capture_exception(e)

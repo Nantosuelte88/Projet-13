@@ -8,6 +8,8 @@ from pathlib import Path
 
 import sentry_sdk
 from sentry_sdk.integrations.django import DjangoIntegration
+from sentry_sdk.integrations.logging import LoggingIntegration
+from sentry_sdk.integrations.logging import SentryHandler
 import logging
 
 
@@ -132,7 +134,15 @@ sentry_sdk.init(
     dsn=SENTRY_DSN,
     traces_sample_rate=1.0,
     profiles_sample_rate=1.0,
-    integrations=[DjangoIntegration()],
+    integrations=[DjangoIntegration(), LoggingIntegration()],
 )
 
-logging.getLogger().setLevel(logging.INFO)
+# Configuration pour capturer les messages de niveau INFO dans Sentry
+sentry_handler = SentryHandler()
+sentry_handler.setLevel(logging.INFO)
+
+logger = logging.getLogger()
+logger.addHandler(sentry_handler)
+
+# Configuration du niveau de journalisation global
+logger.setLevel(logging.INFO)

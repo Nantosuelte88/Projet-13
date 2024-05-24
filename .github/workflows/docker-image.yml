@@ -22,7 +22,7 @@ jobs:
       - name: Build, tag, push, pull, and run Docker image
         env:
           IMAGE_TAG: ${{ github.sha }}
-          DOCKER_REPO: ${{ env.DOCKERHUB_USERNAME }}/your-repo
+          DOCKER_REPO: DOCKERHUB_USERNAME/your-repo
         run: |
           docker build . --file Dockerfile --tag $DOCKER_REPO:$IMAGE_TAG
           docker push $DOCKER_REPO:$IMAGE_TAG

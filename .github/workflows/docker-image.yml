@@ -13,7 +13,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Log in to Docker Hub
-      run: docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
+      run: docker login -u ${{ secrets.DOCKER_EMAIL }} -p ${{ secrets.DOCKER_PASSWORD }}
     - name: Build and push Docker image
       run: |
         docker build . --file Dockerfile --tag ${{ secrets.DOCKER_USERNAME }}/your-repo:${{ github.sha }}
@@ -24,7 +24,7 @@ jobs:
 
     steps:
     - name: Log in to Docker Hub
-      run: docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
+      run: docker login -u ${{ secrets.DOCKER_EMAIL }} -p ${{ secrets.DOCKER_PASSWORD }}
     - name: Pull and run Docker image
       run: |
         docker pull ${{ secrets.DOCKER_USERNAME }}/your-repo:${{ github.sha }}

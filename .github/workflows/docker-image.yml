@@ -14,13 +14,14 @@ jobs:
       - uses: actions/checkout@v4
       - name: Log in to Docker Hub
         env:
-          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}
+          DOCKERHUB_EMAIL: ${{ secrets.DOCKERHUB_EMAIL ]]
         run: |
-          echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u $DOCKER_USERNAME --password-stdin
+          echo ${{ secrets.DOCKERHUB_PASSWORD }} | docker login -u $DOCKERHUB_EMAIL --password-stdin
       - name: Build, tag, push, pull and run Docker image
         run: |
-          docker build . --file Dockerfile --tag $DOCKER_USERNAME/your-repo:${{ github.sha }}
-          docker push $DOCKER_USERNAME/your-repo:${{ github.sha }}
-          docker pull $DOCKER_USERNAME/your-repo:${{ github.sha }}
-          docker run -d -p 8080:80 $DOCKER_USERNAME/your-repo:${{ github.sha }}
+          docker build . --file Dockerfile --tag $DOCKERHUB_USERNAME/your-repo:${{ github.sha }}
+          docker push $DOCKERHUB_USERNAME/your-repo:${{ github.sha }}
+          docker pull $DOCKERHUB_USERNAME/your-repo:${{ github.sha }}
+          docker run -d -p 8080:80 $DOCKERHUB_USERNAME/your-repo:${{ github.sha }}

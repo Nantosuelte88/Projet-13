@@ -1,4 +1,4 @@
-name: Compilation, tests et linting
+name: Compilation tests et linting
 
 on:
   push:

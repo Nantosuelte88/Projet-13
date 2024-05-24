@@ -16,7 +16,7 @@ jobs:
         env:
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
           DOCKERHUB_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}
-          DOCKERHUB_EMAIL: ${{ secrets.DOCKERHUB_EMAIL ]]
+          DOCKERHUB_EMAIL: ${{ secrets.DOCKERHUB_EMAIL }}
         run: |
           echo ${{ secrets.DOCKERHUB_PASSWORD }} | docker login -u $DOCKERHUB_EMAIL --password-stdin
       - name: Build, tag, push, pull and run Docker image

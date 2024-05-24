@@ -20,9 +20,11 @@ jobs:
         run: |
           echo ${{ secrets.DOCKERHUB_PASSWORD }} | docker login -u $DOCKERHUB_EMAIL --password-stdin
       - name: Build, tag, push, pull, and run Docker image
+        env:
+          IMAGE_TAG: ${{ github.sha }}
+          DOCKER_REPO: $DOCKERHUB_USERNAME/your-repo
         run: |
-          IMAGE_TAG=$(echo "${{ github.sha }}" | cut -c1-8)
-          docker build . --file Dockerfile --tag $DOCKERHUB_USERNAME/your-repo:$IMAGE_TAG
-          docker push $DOCKERHUB_USERNAME/your-repo:$IMAGE_TAG
-          docker pull $DOCKERHUB_USERNAME/your-repo:$IMAGE_TAG
-          docker run -d -p 8080:80 $DOCKERHUB_USERNAME/your-repo:$IMAGE_TAG
+          docker build . --file Dockerfile --tag $DOCKER_REPO:$IMAGE_TAG
+          docker push $DOCKER_REPO:$IMAGE_TAG
+          docker pull $DOCKER_REPO:$IMAGE_TAG
+          docker run -d -p 8080:80 $DOCKER_REPO:$IMAGE_TAG

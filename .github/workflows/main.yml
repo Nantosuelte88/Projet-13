@@ -6,8 +6,6 @@ on:
 jobs:
   build_test_lint:
     runs-on: ubuntu-latest
-    outputs:
-      tests_and_linting_passed: ${{ steps.tests_linting.outputs.tests_and_linting_passed }}
 
     steps:
       - name: Checkout code
@@ -31,12 +29,3 @@ jobs:
         run: flake8
       - name: Publish coverage
         run: echo "Publish coverage results here"
-
-      - name: Set tests and linting status
-        id: tests_linting
-        run: |
-          if [ -z "$(ls -A failing_directory)" ]; then
-            echo "::set-output name=tests_and_linting_passed::true"
-          else
-            echo "::set-output name=tests_and_linting_passed::false"
-          fi

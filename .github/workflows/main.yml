@@ -2,6 +2,7 @@ name: Compilation tests et linting
 
 on:
   push:
+  workflow_call:
 
 jobs:
   build_test_lint:

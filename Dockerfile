@@ -10,6 +10,9 @@ COPY . /projet-13
 # On installe les dépendances du projet
 RUN pip install -r requirements.txt
 
+# On collecte les fichiers statiques
+RUN python manage.py collectstatic --noinput
+
 # On expose le port sur lequel l'application écoute
 EXPOSE 8000
 

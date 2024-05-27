@@ -19,9 +19,8 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Install Render CLI
-        run: |
-          curl -fsSL https://render.com/install.sh | sh
+      - name: Render GitHub Action
+        uses: Bounceapp/render-action@0.8.0
 
       - name: Wait for Docker workflow completion
         run: sleep 60 

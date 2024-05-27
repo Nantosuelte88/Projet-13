@@ -24,9 +24,6 @@ jobs:
         with:
           render-token: ${{ secrets.RENDER_TOKEN }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          sleep: 0
-          retries: 50
-          wait: 8000
 
       - name: Log in to Docker Hub
         env:

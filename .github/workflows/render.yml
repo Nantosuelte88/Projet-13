@@ -20,7 +20,7 @@ jobs:
 
       - name: Download Render CLI
         run: |
-          wget -q https://github.com/renderinc/render-cli/releases/latest/download/render-linux -O render
+          curl -fsSL https://github.com/renderinc/render-cli/releases/latest/download/render-linux -o render
           chmod +x render
           sudo mv render /usr/local/bin/
 

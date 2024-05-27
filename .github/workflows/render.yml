@@ -20,7 +20,7 @@ jobs:
 
       - name: Download Render CLI
         run: |
-          wget -q https://render.com/static/render-cli-linux -O render
+          wget -q https://github.com/render/render-cli/releases/latest/download/render-linux -O render
           chmod +x render
           sudo mv render /usr/local/bin/
 
@@ -41,5 +41,5 @@ jobs:
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
           DOCKER_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/img-oc-lettings:${{ github.sha }}
         run: |
-          render service create --name my-service-name
+          render service create --name deploy-oc-lettings
           render deploy -- --docker-image $DOCKER_IMAGE --api-key $RENDER_API_KEY

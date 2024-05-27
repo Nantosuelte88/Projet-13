@@ -19,8 +19,8 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Render GitHub Action
-        uses: Bounceapp/render-action@0.6.0
+      - name: Render GitHub Action           
+        uses: Bounceapp/render-action@0.8.0
         with:
           render-token: ${{ secrets.RENDER_TOKEN }}
           github-token: ${{ secrets.GITHUB_TOKEN }}

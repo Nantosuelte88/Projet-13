@@ -23,6 +23,9 @@ jobs:
         run: |
           curl -fsSL https://render.com/install.sh | sh
 
+      - name: Wait for Docker workflow completion
+        run: sleep 60 
+
       - name: Log in to Docker Hub
         env:
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}

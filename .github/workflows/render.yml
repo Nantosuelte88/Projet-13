@@ -18,9 +18,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Install Render CLI
+      - name: Download Render CLI
         run: |
-          curl -sSL https://render.com/install.sh | sh
+          wget -q https://render.com/static/render-cli-linux -O render
+          chmod +x render
+          sudo mv render /usr/local/bin/
 
       - name: Log in to Docker Hub
         env:

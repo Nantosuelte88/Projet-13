@@ -1,10 +1,9 @@
 name: Deploy to Render
-
 on:
   push:
-    branches: [ "main" ]
+    branches: [main]
   pull_request:
-    branches: [ "main" ]
+    branches: [main]
   workflow_run:
     workflows: ["Docker Image CI"]
     types:
@@ -12,34 +11,15 @@ on:
 
 jobs:
   deploy:
+    name: Deploy to Render
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Download Render CLI
-        run: |
-          curl -fsSL https://github.com/renderinc/render-cli/releases/latest/download/render-linux -o render
-          chmod +x render
-          sudo mv render /usr/local/bin/
-
-      - name: Log in to Docker Hub
-        env:
-          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-          DOCKERHUB_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}
-        run: echo $DOCKERHUB_PASSWORD | docker login -u $DOCKERHUB_USERNAME --password-stdin
-
-      - name: Pull Docker image
-        env:
-          IMAGE_TAG: ${{ github.sha }}
-          DOCKER_REPO: ${{ secrets.DOCKERHUB_USERNAME }}/img-oc-lettings
-        run: docker pull $DOCKER_REPO:$IMAGE_TAG
-
       - name: Deploy to Render
-        env:
-          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
-          DOCKER_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/img-oc-lettings:${{ github.sha }}
-        run: |
-          render service create --name my-service-name
-          render deploy -- --docker-image $DOCKER_IMAGE --api-key $RENDER_API_KEY
+        uses: bounceapp/render-action@0.6.0
+        with:
+          render-token: ${{ secrets.RENDER_TOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          docker-image: ${{ secrets.DOCKERHUB_USERNAME }}/img-oc-lettings:${{ github.sha }}

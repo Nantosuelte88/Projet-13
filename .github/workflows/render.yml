@@ -27,10 +27,6 @@ jobs:
           sleep: 0
           retries: 50
           wait: 8000
-          event: pull_request
-
-      - name: Wait for Docker workflow completion
-        run: sleep 60 
 
       - name: Log in to Docker Hub
         env:

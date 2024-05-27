@@ -17,9 +17,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
+      - name: Get Docker image SHA
+        id: docker_sha
+        run: echo "::set-output name=sha::$(docker inspect --format='{{.Id}}' ${{ secrets.DOCKERHUB_USERNAME }}/img-oc-lettings)"
+
       - name: Deploy to Render
         uses: bounceapp/render-action@0.6.0
         with:
           render-token: ${{ secrets.RENDER_TOKEN }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          docker-image: ${{ secrets.DOCKERHUB_USERNAME }}/img-oc-lettings:${{ github.sha }}
+          docker-image: ${{ secrets.DOCKERHUB_USERNAME }}/img-oc-lettings:${{ steps.docker_sha.outputs.sha }}

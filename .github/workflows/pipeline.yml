@@ -94,7 +94,8 @@ jobs:
                 "autoDeploy": true,
                 "dockerfilePath": "Dockerfile",
                 "buildCommand": "docker build -t '"$DOCKER_IMAGE"' .",
-                "startCommand": "docker run -p 8000:8000 '"$DOCKER_IMAGE"'"
+                "startCommand": "docker run -p 8000:8000 '"$DOCKER_IMAGE"'",
+                "ownerID": "'"$RENDER_OWNER_ID"'"
               }
             }' \
             https://api.render.com/v1/services

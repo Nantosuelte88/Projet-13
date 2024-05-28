@@ -32,7 +32,7 @@ jobs:
         run: flake8
       - name: Generate coverage report
         run: |
-          coverage run --source your_package -m pytest
+          coverage run --source=lettings,oc_lettings_site,profiles --omit=tests/* -m pytest
           coverage report -m --fail-under=80
       - name: Publish coverage
         run: echo "Publish coverage results here"

@@ -33,3 +33,8 @@ jobs:
           docker push $DOCKER_REPO:$IMAGE_TAG
           docker pull $DOCKER_REPO:$IMAGE_TAG
           docker run -d -p 8080:80 $DOCKER_REPO:$IMAGE_TAG
+      - name: Upload Docker image metadata
+        uses: actions/upload-artifact@v3
+        with:
+          name: docker-image-metadata
+          path: .

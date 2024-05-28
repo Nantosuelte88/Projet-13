@@ -7,8 +7,7 @@ on:
     branches: [main]
   workflow_run:
     workflows: ["Docker Image CI"]
-    types:
-      - completed
+    types: [completed]
 
 jobs:
   deploy:

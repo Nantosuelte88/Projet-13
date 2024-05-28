@@ -76,8 +76,9 @@ jobs:
       - name: Deploy to Render
         env:
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_OWNER_ID: ${{ secrets.DOCKERHUB_EMAIL }}
           DOCKER_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/img-oc-lettings:${{ github.sha }}
-          SERVICE_NAME: my-django-app-${{ github.sha }}
+          SERVICE_NAME: oc-lettings-deploy-${{ github.sha }}
         run: |
           echo "Creating new service on Render"
           curl -X POST \

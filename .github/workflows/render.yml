@@ -19,13 +19,12 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: docker-image-metadata
-          path: ./metadata
 
       - name: Read Docker image metadata
         id: metadata
         run: |
-          DOCKER_REPO=$(cat ./metadata/DOCKER_REPO)
-          IMAGE_TAG=$(cat ./metadata/IMAGE_TAG)
+          DOCKER_REPO=$(cat ${{ github.workspace }}/docker-image-metadata/DOCKER_REPO)
+          IMAGE_TAG=$(cat ${{ github.workspace }}/docker-image-metadata/IMAGE_TAG)
           echo "DOCKER_REPO=$DOCKER_REPO" >> $GITHUB_ENV
           echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
 

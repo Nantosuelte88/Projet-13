@@ -65,40 +65,14 @@ jobs:
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     needs: build_and_deploy_docker_image
-  
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-  
-      - name: Install jq
-        run: sudo apt-get install -y jq
-  
-      - name: Get Render URL
-        env:
-          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
-          RENDER_SERVICE_NAME: oc-lettings-deploy-${{ github.sha }}
-        run: |
-          RENDER_SERVICE_INFO=$(curl -X GET \
-            -H "Authorization: Bearer $RENDER_API_KEY" \
-            -H "Content-Type: application/json" \
-            "https://api.render.com/v1/services/$RENDER_SERVICE_NAME")
-          RENDER_SERVICE_URL=$(echo $RENDER_SERVICE_INFO | jq -r '.service.url')
-          echo "Render Service URL: $RENDER_SERVICE_URL"
-          echo "DJANGO_ALLOWED_HOSTS=$RENDER_SERVICE_URL" >> $GITHUB_ENV
 
-      - name: Login to Render
-        env:
-            RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
-        run: |
-            curl -X POST \
-              -H "Authorization: Bearer $RENDER_API_KEY" \
-              -H "Content-Type: application/json" \
-              https://api.render.com/v1/login
-    
       - name: Deploy to Render
         env:
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
-          RENDER_OWNER_ID: ${{ secrets.DOCKERHUB_EMAIL }}
+          RENDER_OWNER_ID: ${{ secrets.RENDER_OWNER_ID }}
           DOCKER_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/img-oc-lettings:${{ github.sha }}
           SERVICE_NAME: oc-lettings-deploy-${{ github.sha }}
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
@@ -112,18 +86,21 @@ jobs:
                 "name": "'"$SERVICE_NAME"'",
                 "type": "web",
                 "env": "docker",
-                "repo": null,
-                "branch": null,
-                "autoDeploy": true,
                 "dockerfilePath": "Dockerfile",
                 "buildCommand": "docker build -t '"$DOCKER_IMAGE"' .",
                 "startCommand": "docker run -p 8000:8000 '"$DOCKER_IMAGE"'",
                 "ownerID": "'"$RENDER_OWNER_ID"'"
               },
-              "env": {
-                "DJANGO_ALLOWED_HOSTS": "'"$RENDER_SERVICE_URL"'",
-                "SENTRY_DSN": "'"$SENTRY_DSN"'"
-              },
+              "envVars": [
+                {
+                  "key": "DJANGO_ALLOWED_HOSTS",
+                  "value": "'"$RENDER_SERVICE_URL"'"
+                },
+                {
+                  "key": "SENTRY_DSN",
+                  "value": "'"$SENTRY_DSN"'"
+                }
+              ],
               "region": "frankfurt",
               "planId": "render.com/freetier"
             }' \

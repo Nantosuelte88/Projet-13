@@ -12,35 +12,50 @@ on:
 
 jobs:
   deploy:
-    name: Deploy to Render
     runs-on: ubuntu-latest
 
     steps:
+      - name: Download Docker image metadata
+        uses: actions/download-artifact@v3
+        with:
+          name: docker-image-metadata
+          path: ./metadata
+
+      - name: Read Docker image metadata
+        id: metadata
+        run: |
+          DOCKER_REPO=$(cat ./metadata/DOCKER_REPO)
+          IMAGE_TAG=$(cat ./metadata/IMAGE_TAG)
+          echo "DOCKER_REPO=$DOCKER_REPO" >> $GITHUB_ENV
+          echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
+
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Render GitHub Action           
-        uses: Bounceapp/render-action@0.8.0
-        with:
-          render-token: ${{ secrets.RENDER_TOKEN }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Install jq
+        run: sudo apt-get install -y jq
 
-      - name: Log in to Docker Hub
-        env:
-          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-          DOCKERHUB_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}
-        run: echo $DOCKERHUB_PASSWORD | docker login -u $DOCKERHUB_USERNAME --password-stdin
-
-      - name: Pull Docker image
-        env:
-          IMAGE_TAG: ${{ github.sha }}
-          DOCKER_REPO: ${{ secrets.DOCKERHUB_USERNAME }}/img-oc-lettings
-        run: docker pull $DOCKER_REPO:$IMAGE_TAG
-
-      - name: Create Render Service and Deploy
+      - name: Deploy to Render
         env:
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
-          DOCKER_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/img-oc-lettings:${{ github.sha }}
+          DOCKER_IMAGE: ${{ env.DOCKER_REPO }}:${{ env.IMAGE_TAG }}
+          SERVICE_NAME: my-django-app-${{ github.sha }}
         run: |
-          render service create --name my-service-name
-          render deploy -- --docker-image $DOCKER_IMAGE --api-key $RENDER_API_KEY
+          echo "Creating new service on Render"
+          curl -X POST \
+            -H "Authorization: Bearer $RENDER_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "serviceDetails": {
+                "name": "'"$SERVICE_NAME"'",
+                "type": "web",
+                "env": "docker",
+                "repo": null,
+                "branch": null,
+                "autoDeploy": false,
+                "dockerfilePath": "Dockerfile",
+                "buildCommand": "docker build -t '"$DOCKER_IMAGE"' .",
+                "startCommand": "docker run -p 8000:8000 '"$DOCKER_IMAGE"'"
+              }
+            }' \
+            https://api.render.com/v1/services

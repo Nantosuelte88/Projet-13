@@ -72,8 +72,9 @@ jobs:
   
       - name: Install render-cli
         run: |
-          curl -o render-install.sh https://render.com/install.sh
-          sh render-install.sh
+          wget https://render.com/render-cli/linux/render
+          chmod +x render
+          sudo mv render /usr/local/bin
   
       - name: Deploy to Render
         env:

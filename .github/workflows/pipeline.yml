@@ -65,37 +65,22 @@ jobs:
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     needs: build_and_deploy_docker_image
-
+  
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-
-      - name: Install jq
-        run: sudo apt-get install -y jq
-
+  
+      - name: Install render-cli
+        run: curl -sSL https://render.com/install | sh
+  
       - name: Deploy to Render
         env:
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
-          RENDER_OWNER_ID: ${{ secrets.DOCKERHUB_EMAIL }}
           DOCKER_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/img-oc-lettings:${{ github.sha }}
           SERVICE_NAME: oc-lettings-deploy-${{ github.sha }}
         run: |
           echo "Creating new service on Render"
-          curl -X POST \
-            -H "Authorization: Bearer $RENDER_API_KEY" \
-            -H "Content-Type: application/json" \
-            -d '{
-              "serviceDetails": {
-                "name": "'"$SERVICE_NAME"'",
-                "type": "web",
-                "env": "docker",
-                "repo": null,
-                "branch": null,
-                "autoDeploy": true,
-                "dockerfilePath": "Dockerfile",
-                "buildCommand": "docker build -t '"$DOCKER_IMAGE"' .",
-                "startCommand": "docker run -p 8000:8000 '"$DOCKER_IMAGE"'",
-                "ownerID": "'"$RENDER_OWNER_ID"'"
-              }
-            }' \
-            https://api.render.com/v1/services
+          render service create --name $SERVICE_NAME
+          
+          echo "Deploying to Render"
+          render deploy -- --docker-image $DOCKER_IMAGE --api-key $RENDER_API_KEY

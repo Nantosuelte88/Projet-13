@@ -70,17 +70,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
   
-      - name: Install render-cli
-        run: curl -sSL https://render.com/install | sh
-  
       - name: Deploy to Render
-        env:
-          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
-          DOCKER_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/img-oc-lettings:${{ github.sha }}
-          SERVICE_NAME: oc-lettings-deploy-${{ github.sha }}
-        run: |
-          echo "Creating new service on Render"
-          render service create --name $SERVICE_NAME
-          
-          echo "Deploying to Render"
-          render deploy -- --docker-image $DOCKER_IMAGE --api-key $RENDER_API_KEY
+        uses: Bounceapp/render-action@0.8.0
+        with:
+          render-token: ${{ secrets.RENDER_API_KEY }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          retries: 20
+          wait: 16000
+          sleep: 30000
+          docker-image: ${{ secrets.DOCKERHUB_USERNAME }}/img-oc-lettings:${{ github.sha }}

@@ -73,10 +73,11 @@ jobs:
       - name: Deploy to Render
         env:
           RENDER_TOKEN: ${{ secrets.RENDER_TOKEN }}
-          RENDER_APP_NAME: your_render_app_name
+          RENDER_APP_NAME: img-oc-lettings-deploy
           DOCKER_REPO: ${{ secrets.DOCKERHUB_USERNAME }}/img-oc-lettings
           IMAGE_TAG: ${{ github.sha }}
+          DOCKER_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/img-oc-lettings:${{ github.sha }}
         run: |
           curl -X POST -H "Authorization: Bearer $RENDER_TOKEN" \
-               -d "image=$DOCKER_REPO:$IMAGE_TAG" \
+               -d "image=$DOCKER_IMAGE" \
                https://api.render.com/v1/services/$RENDER_APP_NAME/render-deploy

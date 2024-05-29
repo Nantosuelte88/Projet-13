@@ -62,71 +62,80 @@ jobs:
           docker run -d -p 8080:80 $DOCKER_REPO:$IMAGE_TAG
 
   deploy_to_render:
-      runs-on: ubuntu-latest
-      if: github.ref == 'refs/heads/main'
-      needs: build_and_deploy_docker_image
-  
-      steps:
-        - name: Checkout code
-          uses: actions/checkout@v2
-  
-        - name: Install jq
-          run: sudo apt-get install -y jq
-  
-        - name: Get Render Owner ID
-          env:
-            RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
-          run: |
-            RESPONSE=$(curl -s -X GET -H "Authorization: Bearer $RENDER_API_KEY" https://api.render.com/v1/owners)
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    needs: build_and_deploy_docker_image
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Install jq
+        run: sudo apt-get install -y jq
+
+      - name: Get Render Owner ID
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        run: |
+          RESPONSE=$(curl -s -X GET -H "Authorization: Bearer $RENDER_API_KEY" https://api.render.com/v1/owners)
+          echo "Response: $RESPONSE"
+          if [ -z "$RESPONSE" ]; then
+            echo "Error: No response from Render API"
+            exit 1
+          fi
+          OWNER_ID=$(echo "$RESPONSE" | jq -r '.[0].owner.id')
+          echo "Extracted OWNER_ID: $OWNER_ID"
+          if [ "$OWNER_ID" == "null" ] || [ -z "$OWNER_ID" ]; then
+            echo "Error: ownerID not found in the response"
             echo "Response: $RESPONSE"
-            if [ -z "$RESPONSE" ]; then
-              echo "Error: No response from Render API"
-              exit 1
-            fi
-            OWNER_ID=$(echo "$RESPONSE" | jq -r '.[0].owner.id')
-            echo "Extracted OWNER_ID: $OWNER_ID"
-            if [ "$OWNER_ID" == "null" ] || [ -z "$OWNER_ID" ]; then
-              echo "Error: ownerID not found in the response"
-              echo "Response: $RESPONSE"
-              exit 1
-            fi
-            echo "OWNER_ID=$OWNER_ID" >> $GITHUB_ENV
-  
-        - name: Deploy to Render
-          env:
-            RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
-            DOCKER_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/img-oc-lettings:${{ github.sha }}
-            SERVICE_NAME: oc-lettings-deploy-${{ github.sha }}
-            SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
-            OWNER_ID: ${{ env.OWNER_ID }}
-          run: |
-            echo "Creating new service on Render"
-            OWNER_ID=${{ env.OWNER_ID }}
-            echo "OWNER_ID for deployment: $OWNER_ID"
-            curl -X POST \
-              -H "Authorization: Bearer $RENDER_API_KEY" \
-              -H "Content-Type: application/json" \
-              -d '{
-                "serviceDetails": {
-                  "name": "'"$SERVICE_NAME"'",
-                  "type": "web",
-                  "env": "docker",
-                  "dockerfilePath": "Dockerfile",
-                  "buildCommand": "docker build -t '"$DOCKER_IMAGE"' .",
-                  "startCommand": "docker run -p 8000:8000 '"$DOCKER_IMAGE"'",
-                  "ownerID": "'"$OWNER_ID"'"
-                },
-                "envVars": [
-                  {
-                    "key": "DJANGO_ALLOWED_HOSTS",
-                    "value": "'"$SERVICE_NAME".onrender.com'"
-                  },
-                  {
-                    "key": "SENTRY_DSN",
-                    "value": "'"$SENTRY_DSN"'"
-                  }
-                ],
-                "region": "frankfurt",
-                "planId": "render.com/freetier"
-              }' \
-              https://api.render.com/v1/services
+            exit 1
+          fi
+          echo "OWNER_ID=$OWNER_ID" >> $GITHUB_ENV
+
+      - name: Deploy to Render
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          DOCKER_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/img-oc-lettings:${{ github.sha }}
+          SERVICE_NAME: oc-lettings-deploy-${{ github.sha }}
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+        run: |
+          echo "Creating new service on Render"
+          OWNER_ID=${{ env.OWNER_ID }}
+          echo "OWNER_ID for deployment: $OWNER_ID"
+
+          # Create the JSON payload
+          cat <<EOF > payload.json
+          {
+            "serviceDetails": {
+              "name": "${SERVICE_NAME}",
+              "type": "web",
+              "env": "docker",
+              "dockerfilePath": "Dockerfile",
+              "buildCommand": "docker build -t ${DOCKER_IMAGE} .",
+              "startCommand": "docker run -p 8000:8000 ${DOCKER_IMAGE}",
+              "ownerID": "${OWNER_ID}"
+            },
+            "envVars": [
+              {
+                "key": "DJANGO_ALLOWED_HOSTS",
+                "value": "${SERVICE_NAME}.onrender.com"
+              },
+              {
+                "key": "SENTRY_DSN",
+                "value": "${SENTRY_DSN}"
+              }
+            ],
+            "region": "frankfurt",
+            "planId": "render.com/freetier"
+          }
+          EOF
+
+          # Display the JSON payload for debugging purposes
+          cat payload.json
+
+          # Send the JSON payload using curl
+          curl -X POST \
+            -H "Authorization: Bearer $RENDER_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d @payload.json \
+            https://api.render.com/v1/services

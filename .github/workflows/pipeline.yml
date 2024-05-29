@@ -77,13 +77,13 @@ jobs:
         env:
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
         run: |
-          RESPONSE=$(curl -s -X GET -H "Authorization: Bearer $RENDER_API_KEY" https://api.render.com/v1/services)
+          RESPONSE=$(curl -s -X GET -H "Authorization: Bearer $RENDER_API_KEY" https://api.render.com/v1/owners)
           echo "Response: $RESPONSE"
           if [ -z "$RESPONSE" ]; then
             echo "Error: No response from Render API"
             exit 1
           fi
-          OWNER_ID=$(echo "$RESPONSE" | jq -r '.[0].ownerId')
+          OWNER_ID=$(echo "$RESPONSE" | jq -r '.[0].id')
           if [ "$OWNER_ID" == "null" ] || [ -z "$OWNER_ID" ]; then
             echo "Error: ownerID not found in the response"
             echo "Response: $RESPONSE"

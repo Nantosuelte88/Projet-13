@@ -65,14 +65,27 @@ jobs:
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     needs: build_and_deploy_docker_image
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
 
+      - name: Install jq
+        run: sudo apt-get install -y jq
+
+      - name: Get Render Owner ID
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        run: |
+          curl -s -X GET \
+            -H "Authorization: Bearer $RENDER_API_KEY" \
+            https://api.render.com/v1/services | jq -r '.[0].ownerId' > render_owner_id.txt
+          OWNER_ID=$(cat render_owner_id.txt)
+          echo "OWNER_ID=$OWNER_ID" >> $GITHUB_ENV
+
       - name: Deploy to Render
         env:
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
-          RENDER_OWNER_ID: ${{ secrets.RENDER_OWNER_ID }} 
           DOCKER_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/img-oc-lettings:${{ github.sha }}
           SERVICE_NAME: oc-lettings-deploy-${{ github.sha }}
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
@@ -89,7 +102,7 @@ jobs:
                 "dockerfilePath": "Dockerfile",
                 "buildCommand": "docker build -t '"$DOCKER_IMAGE"' .",
                 "startCommand": "docker run -p 8000:8000 '"$DOCKER_IMAGE"'",
-                "ownerID": "'"$RENDER_OWNER_ID"'"
+                "ownerID": "'"$OWNER_ID"'"
               },
               "envVars": [
                 {

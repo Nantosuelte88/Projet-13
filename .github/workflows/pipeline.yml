@@ -93,13 +93,13 @@ jobs:
           echo "OWNER_ID=$OWNER_ID" >> $GITHUB_ENV
 
       - name: Deploy to Render
+        uses: renderapp/deploy-action@1.1.1
         env:
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
           DOCKER_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/img-oc-lettings:${{ github.sha }}
           SERVICE_NAME: oc-lettings-deploy-${{ github.sha }}
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
           OWNER_ID: ${{ env.OWNER_ID }}
-        uses: renderapp/deploy-action@1.1.1
         with:
           renderToken: $RENDER_API_KEY
           dockerImage: $DOCKER_IMAGE

@@ -99,40 +99,7 @@ jobs:
           SERVICE_NAME: oc-lettings-deploy-${{ github.sha }}
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
           OWNER_ID: ${{ env.OWNER_ID }}
-        run: |
-          echo "Creating new service on Render"
-          echo "OWNER_ID for deployment: $OWNER_ID"
-
-          # Create the JSON payload
-          JSON_PAYLOAD=$(jq -n \
-            --arg serviceName "$SERVICE_NAME" \
-            --arg dockerImage "$DOCKER_IMAGE" \
-            --arg ownerId "$OWNER_ID" \
-            --arg sentryDsn "$SENTRY_DSN" \
-            '{
-              serviceDetails: {
-                name: $serviceName,
-                type: "web",
-                env: "docker",
-                dockerfilePath: "Dockerfile",
-                buildCommand: ("docker build -t " + $dockerImage + " ."),
-                startCommand: ("docker run -p 8000:8000 " + $dockerImage),
-                ownerID: $ownerId
-              },
-              envVars: [
-                { key: "DJANGO_ALLOWED_HOSTS", value: ($serviceName + ".onrender.com") },
-                { key: "SENTRY_DSN", value: $sentryDsn }
-              ],
-              region: "frankfurt",
-              planId: "render.com/freetier"
-            }')
-
-          # Display the JSON payload for debugging purposes
-          echo "JSON Payload: $JSON_PAYLOAD"
-
-          # Send the JSON payload using curl
-          curl -X POST \
-            -H "Authorization: Bearer $RENDER_API_KEY" \
-            -H "Content-Type: application/json" \
-            -d "$JSON_PAYLOAD" \
-            https://api.render.com/v1/services
+        uses: renderapp/deploy-action@1.1.1
+        with:
+          renderToken: $RENDER_API_KEY
+          dockerImage: $DOCKER_IMAGE

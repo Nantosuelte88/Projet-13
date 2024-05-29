@@ -84,6 +84,7 @@ jobs:
               exit 1
             fi
             OWNER_ID=$(echo "$RESPONSE" | jq -r '.[0].owner.id')
+            echo "Extracted OWNER_ID: $OWNER_ID"
             if [ "$OWNER_ID" == "null" ] || [ -z "$OWNER_ID" ]; then
               echo "Error: ownerID not found in the response"
               echo "Response: $RESPONSE"
@@ -100,6 +101,8 @@ jobs:
             OWNER_ID: ${{ env.OWNER_ID }}
           run: |
             echo "Creating new service on Render"
+            OWNER_ID=${{ env.OWNER_ID }}
+            echo "OWNER_ID for deployment: $OWNER_ID"
             curl -X POST \
               -H "Authorization: Bearer $RENDER_API_KEY" \
               -H "Content-Type: application/json" \

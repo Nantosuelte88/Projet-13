@@ -70,14 +70,66 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
+      - name: Install jq
+        run: sudo apt-get install -y jq
+
+      - name: Get Render Owner ID
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        run: |
+          RESPONSE=$(curl -s -X GET -H "Authorization: Bearer $RENDER_API_KEY" https://api.render.com/v1/owners)
+          echo "Response: $RESPONSE"
+          if [ -z "$RESPONSE" ]; then
+            echo "Error: No response from Render API"
+            exit 1
+          fi
+          OWNER_ID=$(echo "$RESPONSE" | jq -r '.[0].owner.id')
+          echo "Extracted OWNER_ID: $OWNER_ID"
+          if [ "$OWNER_ID" == "null" ] || [ -z "$OWNER_ID" ]; then
+            echo "Error: ownerID not found in the response"
+            echo "Response: $RESPONSE"
+            exit 1
+          fi
+          echo "OWNER_ID=$OWNER_ID" >> $GITHUB_ENV
+
       - name: Deploy to Render
         env:
-          RENDER_TOKEN: ${{ secrets.RENDER_TOKEN }}
-          RENDER_APP_NAME: img-oc-lettings-deploy
-          DOCKER_REPO: ${{ secrets.DOCKERHUB_USERNAME }}/img-oc-lettings
-          IMAGE_TAG: ${{ github.sha }}
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
           DOCKER_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/img-oc-lettings:${{ github.sha }}
+          SERVICE_NAME: oc-lettings-deploy-${{ github.sha }}
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          OWNER_ID: ${{ env.OWNER_ID }}
         run: |
-          curl -X POST -H "Authorization: Bearer $RENDER_TOKEN" \
-               -d "image=$DOCKER_IMAGE" \
-               https://api.render.com/v1/services/$RENDER_APP_NAME/render-deploy
+          echo "Creating new service on Render"
+          echo "OWNER_ID for deployment: $OWNER_ID"
+
+          # Create the JSON payload
+          JSON_PAYLOAD=$(jq -n \
+            --arg serviceName "$SERVICE_NAME" \
+            --arg dockerImage "$DOCKER_IMAGE" \
+            --arg ownerId "$OWNER_ID" \
+            --arg sentryDsn "$SENTRY_DSN" \
+            '{
+              name: $serviceName,
+              type: "web_service",
+              env: "docker",
+              repo: $dockerImage,
+              region: "oregon", # Adjust as needed
+              plan: "starter", # Adjust as needed
+              branch: "main",
+              owner_id: $ownerId,
+              envVars: [
+                { key: "DJANGO_ALLOWED_HOSTS", value: ($serviceName + ".onrender.com") },
+                { key: "SENTRY_DSN", value: $sentryDsn }
+              ]
+            }')
+
+          # Display the JSON payload for debugging purposes
+          echo "JSON Payload: $JSON_PAYLOAD"
+
+          # Send the JSON payload using curl
+          curl -X POST \
+            -H "Authorization: Bearer $RENDER_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d "$JSON_PAYLOAD" \
+            https://api.render.com/v1/services

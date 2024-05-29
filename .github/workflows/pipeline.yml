@@ -83,7 +83,7 @@ jobs:
             echo "Error: No response from Render API"
             exit 1
           fi
-          OWNER_ID=$(echo "$RESPONSE" | jq -r '.[0].id')
+          OWNER_ID=$(echo "$RESPONSE" | jq -r '.[0].owner.id')
           if [ "$OWNER_ID" == "null" ] || [ -z "$OWNER_ID" ]; then
             echo "Error: ownerID not found in the response"
             echo "Response: $RESPONSE"

@@ -67,15 +67,19 @@ jobs:
     needs: build_and_deploy_docker_image
 
     steps:
+      - name: Install jq
+        run: sudo apt-get install -y jq
+
       - name: Get Service ID
         id: get_service_id
         env:
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_SERVICE_NAME: ${{ vars.RENDER_SERVICE_NAME }}
         run: |
-          SERVICE_NAME="my-docker-service"
+          SERVICE_NAME="$RENDER_SERVICE_NAME"
           RESPONSE=$(curl -s -H "Authorization: Bearer $RENDER_API_KEY" https://api.render.com/v1/services)
           SERVICE_ID=$(echo $RESPONSE | jq -r --arg NAME "$SERVICE_NAME" '.[] | select(.service.name == $NAME) | .service.id')
-          echo "::set-output name=service_id::$SERVICE_ID"
+          echo "SERVICE_ID=$SERVICE_ID" >> $GITHUB_ENV
 
       - name: Create or Update Render Service
         id: render_service
@@ -83,13 +87,14 @@ jobs:
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
           IMAGE_TAG: ${{ github.sha }}
           DOCKER_REPO: ${{ secrets.DOCKERHUB_USERNAME }}/img-oc-lettings
-          SERVICE_ID: ${{ steps.get_service_id.outputs.service_id }}
+          RENDER_SERVICE_NAME: ${{ vars.RENDER_SERVICE_NAME }}
+          SERVICE_ID: ${{ env.SERVICE_ID }}
         run: |
           if [ -z "$SERVICE_ID" ]; then
             SERVICE_ID=$(curl -s -X POST -H "Authorization: Bearer $RENDER_API_KEY" -H "Content-Type: application/json" \
               -d '{
                 "service": {
-                  "name": "my-docker-service",
+                  "name": "'$RENDER_SERVICE_NAME'",
                   "type": "web",
                   "env": "docker",
                   "region": "oregon",
@@ -97,6 +102,7 @@ jobs:
                   "branch": "main"
                 }
               }' https://api.render.com/v1/services | jq -r '.service.id')
+            echo "SERVICE_ID=$SERVICE_ID" >> $GITHUB_ENV
           else
             curl -s -X PATCH -H "Authorization: Bearer $RENDER_API_KEY" -H "Content-Type: application/json" \
               -d '{
@@ -105,12 +111,11 @@ jobs:
                 }
               }' https://api.render.com/v1/services/$SERVICE_ID
           fi
-          echo "::set-output name=service_id::$SERVICE_ID"
 
       - name: Deploy to Render
         env:
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
-          SERVICE_ID: ${{ steps.render_service.outputs.service_id }}
+          SERVICE_ID: ${{ env.SERVICE_ID }}
         run: |
           curl -s -X POST -H "Authorization: Bearer $RENDER_API_KEY" \
             https://api.render.com/v1/services/$SERVICE_ID/deploys

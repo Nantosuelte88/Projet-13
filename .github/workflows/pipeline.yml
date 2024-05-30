@@ -67,33 +67,43 @@ jobs:
     needs: build_and_deploy_docker_image
 
     steps:
-      - name: Install Node.js
-        uses: actions/setup-node@v2
-        with:
-          node-version: '14'
-
-      - name: Install Render CLI
-        run: npm install -g render-cli
-
-      - name: Login to Render
+      - name: Get Service ID
+        id: get_service_id
         env:
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
         run: |
-          echo $RENDER_API_KEY | render login --api-key
+          SERVICE_NAME="my-docker-service"
+          RESPONSE=$(curl -s -H "Authorization: Bearer $RENDER_API_KEY" https://api.render.com/v1/services)
+          SERVICE_ID=$(echo $RESPONSE | jq -r --arg NAME "$SERVICE_NAME" '.[] | select(.service.name == $NAME) | .service.id')
+          echo "::set-output name=service_id::$SERVICE_ID"
 
       - name: Create or Update Render Service
         id: render_service
         env:
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
-          SERVICE_NAME: "my-docker-service"
           IMAGE_TAG: ${{ github.sha }}
           DOCKER_REPO: ${{ secrets.DOCKERHUB_USERNAME }}/img-oc-lettings
+          SERVICE_ID: ${{ steps.get_service_id.outputs.service_id }}
         run: |
-          SERVICE_ID=$(render services list | grep $SERVICE_NAME | awk '{print $1}')
           if [ -z "$SERVICE_ID" ]; then
-            SERVICE_ID=$(render services create web $SERVICE_NAME --env docker --docker-image $DOCKER_REPO:$IMAGE_TAG --region oregon --branch main | grep -oE 'srv-[a-zA-Z0-9]+')
+            SERVICE_ID=$(curl -s -X POST -H "Authorization: Bearer $RENDER_API_KEY" -H "Content-Type: application/json" \
+              -d '{
+                "service": {
+                  "name": "my-docker-service",
+                  "type": "web",
+                  "env": "docker",
+                  "region": "oregon",
+                  "repo": "'$DOCKER_REPO':'$IMAGE_TAG'",
+                  "branch": "main"
+                }
+              }' https://api.render.com/v1/services | jq -r '.service.id')
           else
-            render services update $SERVICE_ID --docker-image $DOCKER_REPO:$IMAGE_TAG
+            curl -s -X PATCH -H "Authorization: Bearer $RENDER_API_KEY" -H "Content-Type: application/json" \
+              -d '{
+                "service": {
+                  "repo": "'$DOCKER_REPO':'$IMAGE_TAG'"
+                }
+              }' https://api.render.com/v1/services/$SERVICE_ID
           fi
           echo "::set-output name=service_id::$SERVICE_ID"
 
@@ -102,4 +112,5 @@ jobs:
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
           SERVICE_ID: ${{ steps.render_service.outputs.service_id }}
         run: |
-          render deployments create $SERVICE_ID --docker-image $DOCKER_REPO:$IMAGE_TAG
+          curl -s -X POST -H "Authorization: Bearer $RENDER_API_KEY" \
+            https://api.render.com/v1/services/$SERVICE_ID/deploys

@@ -68,7 +68,11 @@ jobs:
 
     steps:
       - name: Install Render CLI
-        run: curl -fsSL https://render.com/releases/cli/latest/install.sh | bash
+        run: |
+          curl -fsSL https://render.com/releases/cli/latest/install.sh | bash
+          echo 'export PATH=$PATH:$HOME/.render' >> $HOME/.bashrc
+          source $HOME/.bashrc
+          render version  
 
       - name: Login to Render
         env:

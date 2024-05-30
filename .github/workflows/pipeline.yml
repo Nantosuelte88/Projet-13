@@ -69,9 +69,8 @@ jobs:
     steps:
       - name: Install Render CLI
         run: |
-          curl -fsSL https://render.com/releases/cli/latest/install.sh | bash
-          echo 'export PATH=$PATH:$HOME/.render' >> $HOME/.bashrc
-          source $HOME/.bashrc
+          curl -fsSL https://github.com/renderinc/render/releases/latest/download/render -o /usr/local/bin/render
+          chmod +x /usr/local/bin/render
           render version  
 
       - name: Login to Render

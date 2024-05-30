@@ -70,8 +70,8 @@ jobs:
     - name: Install jq
       run: sudo apt-get install -y jq
 
-    - name: Get Service ID
-      id: get_service_id
+    - name: Get Service ID and Owner ID
+      id: get_service_and_owner_id
       env:
         RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
         RENDER_SERVICE_NAME: ${{ secrets.RENDER_SERVICE_NAME }}
@@ -81,12 +81,15 @@ jobs:
         RESPONSE=$(curl -s -H "Authorization: Bearer $RENDER_API_KEY" https://api.render.com/v1/services)
         echo "API Response: $RESPONSE"
         SERVICE_ID=$(echo $RESPONSE | jq -r --arg NAME "$SERVICE_NAME" '.[] | select(.service.name == $NAME) | .service.id')
+        OWNER_ID=$(echo $RESPONSE | jq -r '.[0].service.ownerId')
         if [ -z "$SERVICE_ID" ]; then
           echo "No matching service found."
         else
           echo "Found Service ID: $SERVICE_ID"
         fi
+        echo "Found Owner ID: $OWNER_ID"
         echo "SERVICE_ID=$SERVICE_ID" >> $GITHUB_ENV
+        echo "OWNER_ID=$OWNER_ID" >> $GITHUB_ENV
 
     - name: Create or Update Render Service
       env:
@@ -95,6 +98,7 @@ jobs:
         DOCKER_REPO: ${{ secrets.DOCKERHUB_USERNAME }}/img-oc-lettings
         RENDER_SERVICE_NAME: ${{ secrets.RENDER_SERVICE_NAME }}
         SERVICE_ID: ${{ env.SERVICE_ID }}
+        OWNER_ID: ${{ env.OWNER_ID }}
       run: |
         if [ -z "$SERVICE_ID" ]; then
           echo "Creating new service: $RENDER_SERVICE_NAME"
@@ -106,7 +110,8 @@ jobs:
                 "env": "docker",
                 "region": "oregon",
                 "repo": "'$DOCKER_REPO':'$IMAGE_TAG'",
-                "branch": "main"
+                "branch": "main",
+                "ownerID": "'$OWNER_ID'"
               }
             }' https://api.render.com/v1/services)
           echo "Create Service Response: $RESPONSE"

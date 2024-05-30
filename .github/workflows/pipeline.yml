@@ -87,7 +87,7 @@ jobs:
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
           IMAGE_TAG: ${{ github.sha }}
           DOCKER_REPO: ${{ secrets.DOCKERHUB_USERNAME }}/img-oc-lettings
-          RENDER_SERVICE_NAME: ${{ vars.RENDER_SERVICE_NAME }}
+          RENDER_SERVICE_NAME: ${{ secrets.RENDER_SERVICE_NAME }}
           SERVICE_ID: ${{ env.SERVICE_ID }}
         run: |
           if [ -z "$SERVICE_ID" ]; then

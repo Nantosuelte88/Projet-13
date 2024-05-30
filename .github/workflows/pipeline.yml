@@ -74,7 +74,7 @@ jobs:
         id: get_service_id
         env:
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
-          RENDER_SERVICE_NAME: ${{ vars.RENDER_SERVICE_NAME }}
+          RENDER_SERVICE_NAME: ${{ secrets.RENDER_SERVICE_NAME }}
         run: |
           SERVICE_NAME="$RENDER_SERVICE_NAME"
           RESPONSE=$(curl -s -H "Authorization: Bearer $RENDER_API_KEY" https://api.render.com/v1/services)

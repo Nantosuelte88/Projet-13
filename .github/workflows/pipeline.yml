@@ -67,11 +67,13 @@ jobs:
     needs: build_and_deploy_docker_image
 
     steps:
+      - name: Install Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14'
+
       - name: Install Render CLI
-        run: |
-          curl -fsSL https://github.com/renderinc/render/releases/latest/download/render -o /usr/local/bin/render
-          chmod +x /usr/local/bin/render
-          render version  
+        run: npm install -g render-cli
 
       - name: Login to Render
         env:

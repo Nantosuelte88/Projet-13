@@ -67,55 +67,66 @@ jobs:
     needs: build_and_deploy_docker_image
 
     steps:
-      - name: Install jq
-        run: sudo apt-get install -y jq
+    - name: Install jq
+      run: sudo apt-get install -y jq
 
-      - name: Get Service ID
-        id: get_service_id
-        env:
-          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
-          RENDER_SERVICE_NAME: ${{ secrets.RENDER_SERVICE_NAME }}
-        run: |
-          SERVICE_NAME="$RENDER_SERVICE_NAME"
-          RESPONSE=$(curl -s -H "Authorization: Bearer $RENDER_API_KEY" https://api.render.com/v1/services)
-          SERVICE_ID=$(echo $RESPONSE | jq -r --arg NAME "$SERVICE_NAME" '.[] | select(.service.name == $NAME) | .service.id')
+    - name: Get Service ID
+      id: get_service_id
+      env:
+        RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        RENDER_SERVICE_NAME: ${{ secrets.RENDER_SERVICE_NAME }}
+      run: |
+        SERVICE_NAME="$RENDER_SERVICE_NAME"
+        echo "Fetching service ID for service name: $SERVICE_NAME"
+        RESPONSE=$(curl -s -H "Authorization: Bearer $RENDER_API_KEY" https://api.render.com/v1/services)
+        echo "API Response: $RESPONSE"
+        SERVICE_ID=$(echo $RESPONSE | jq -r --arg NAME "$SERVICE_NAME" '.[] | select(.service.name == $NAME) | .service.id')
+        echo "SERVICE_ID=$SERVICE_ID" >> $GITHUB_ENV
+        echo "Service ID: $SERVICE_ID"
+
+    - name: Create or Update Render Service
+      env:
+        RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        IMAGE_TAG: ${{ github.sha }}
+        DOCKER_REPO: ${{ secrets.DOCKERHUB_USERNAME }}/img-oc-lettings
+        RENDER_SERVICE_NAME: ${{ secrets.RENDER_SERVICE_NAME }}
+        SERVICE_ID: ${{ env.SERVICE_ID }}
+      run: |
+        if [ -z "$SERVICE_ID" ]; then
+          echo "Creating new service: $RENDER_SERVICE_NAME"
+          RESPONSE=$(curl -s -X POST -H "Authorization: Bearer $RENDER_API_KEY" -H "Content-Type: application/json" \
+            -d '{
+              "service": {
+                "name": "'$RENDER_SERVICE_NAME'",
+                "type": "web",
+                "env": "docker",
+                "region": "oregon",
+                "repo": "'$DOCKER_REPO':'$IMAGE_TAG'",
+                "branch": "main"
+              }
+            }' https://api.render.com/v1/services)
+          SERVICE_ID=$(echo $RESPONSE | jq -r '.service.id')
           echo "SERVICE_ID=$SERVICE_ID" >> $GITHUB_ENV
+          echo "Created Service ID: $SERVICE_ID"
+        else
+          echo "Updating existing service with ID: $SERVICE_ID"
+          curl -s -X PATCH -H "Authorization: Bearer $RENDER_API_KEY" -H "Content-Type: application/json" \
+            -d '{
+              "service": {
+                "repo": "'$DOCKER_REPO':'$IMAGE_TAG'"
+              }
+            }' https://api.render.com/v1/services/$SERVICE_ID
+        fi
 
-      - name: Create or Update Render Service
-        id: render_service
-        env:
-          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
-          IMAGE_TAG: ${{ github.sha }}
-          DOCKER_REPO: ${{ secrets.DOCKERHUB_USERNAME }}/img-oc-lettings
-          RENDER_SERVICE_NAME: ${{ secrets.RENDER_SERVICE_NAME }}
-          SERVICE_ID: ${{ env.SERVICE_ID }}
-        run: |
-          if [ -z "$SERVICE_ID" ]; then
-            SERVICE_ID=$(curl -s -X POST -H "Authorization: Bearer $RENDER_API_KEY" -H "Content-Type: application/json" \
-              -d '{
-                "service": {
-                  "name": "'$RENDER_SERVICE_NAME'",
-                  "type": "web",
-                  "env": "docker",
-                  "region": "oregon",
-                  "repo": "'$DOCKER_REPO':'$IMAGE_TAG'",
-                  "branch": "main"
-                }
-              }' https://api.render.com/v1/services | jq -r '.service.id')
-            echo "SERVICE_ID=$SERVICE_ID" >> $GITHUB_ENV
-          else
-            curl -s -X PATCH -H "Authorization: Bearer $RENDER_API_KEY" -H "Content-Type: application/json" \
-              -d '{
-                "service": {
-                  "repo": "'$DOCKER_REPO':'$IMAGE_TAG'"
-                }
-              }' https://api.render.com/v1/services/$SERVICE_ID
-          fi
-
-      - name: Deploy to Render
-        env:
-          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
-          SERVICE_ID: ${{ env.SERVICE_ID }}
-        run: |
-          curl -s -X POST -H "Authorization: Bearer $RENDER_API_KEY" \
-            https://api.render.com/v1/services/$SERVICE_ID/deploys
+    - name: Deploy to Render
+      env:
+        RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        SERVICE_ID: ${{ env.SERVICE_ID }}
+      run: |
+        if [ -z "$SERVICE_ID" ]; then
+          echo "Service ID not found. Deployment aborted."
+          exit 1
+        fi
+        echo "Deploying service with ID: $SERVICE_ID"
+        curl -s -X POST -H "Authorization: Bearer $RENDER_API_KEY" \
+          https://api.render.com/v1/services/$SERVICE_ID/deploys

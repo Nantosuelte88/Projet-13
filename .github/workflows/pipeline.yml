@@ -123,8 +123,8 @@ jobs:
               "ownerId": "$OWNER_ID"
             }
           }
-EOF
-)
+        EOF
+        )
           echo "JSON Data: $JSON_DATA"
           RESPONSE=$(curl -s -X POST -H "Authorization: Bearer $RENDER_API_KEY" -H "Content-Type: application/json" \
             -d "$JSON_DATA" https://api.render.com/v1/services)

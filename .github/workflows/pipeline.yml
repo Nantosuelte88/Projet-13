@@ -106,8 +106,8 @@ jobs:
         IMAGE_TAG: ${{ github.sha }}
         DOCKER_REPO: ${{ secrets.DOCKERHUB_USERNAME }}/img-oc-lettings
         RENDER_SERVICE_NAME: ${{ secrets.RENDER_SERVICE_NAME }}
-        SERVICE_ID: ${{ env.SERVICE_ID }}
         OWNER_ID: ${{ env.OWNER_ID }}
+        SERVICE_ID: ${{ env.SERVICE_ID }}
       run: |
         if [ -z "$SERVICE_ID" ]; then
           echo "Creating new service: $RENDER_SERVICE_NAME"

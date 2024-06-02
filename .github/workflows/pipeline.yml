@@ -112,20 +112,20 @@ jobs:
         if [ -z "$SERVICE_ID" ]; then
           echo "Creating new service: $RENDER_SERVICE_NAME"
           JSON_DATA=$(cat <<EOF
-        {
-          "service": {
-            "name": "$RENDER_SERVICE_NAME",
-            "type": "web",
-            "env": "docker",
-            "region": "oregon",
-            "repo": "$DOCKER_REPO:$IMAGE_TAG",
-            "branch": "main",
-            "ownerId": "$OWNER_ID"
+          {
+            "service": {
+              "name": "$RENDER_SERVICE_NAME",
+              "type": "web",
+              "env": "docker",
+              "region": "oregon",
+              "repo": "$DOCKER_REPO:$IMAGE_TAG",
+              "branch": "main",
+              "ownerId": "$OWNER_ID"
+            }
           }
-        }
-        EOF
-        )
-              echo "JSON Data: $JSON_DATA"
+EOF
+)
+          echo "JSON Data: $JSON_DATA"
           RESPONSE=$(curl -s -X POST -H "Authorization: Bearer $RENDER_API_KEY" -H "Content-Type: application/json" \
             -d "$JSON_DATA" https://api.render.com/v1/services)
           echo "Create Service Response: $RESPONSE"
@@ -145,8 +145,8 @@ jobs:
               }
             }' https://api.render.com/v1/services/$SERVICE_ID)
           echo "Update Service Response: $RESPONSE"
-          fi
-          
+        fi
+
     - name: Deploy to Render
       env:
         RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}

@@ -77,16 +77,24 @@ jobs:
       run: |
         echo "Fetching owner ID"
         OWNER_RESPONSE=$(curl -s -H "Authorization: Bearer $RENDER_API_KEY" https://api.render.com/v1/owners)
-        echo "Owner API Response: $OWNER_RESPONSE"
         OWNER_ID=$(echo $OWNER_RESPONSE | jq -r '.[0].owner.id')
-        echo "Found Owner ID: $OWNER_ID"
         echo "OWNER_ID=$OWNER_ID" >> $GITHUB_ENV
+
+    - name: Generate Service Name if Not Provided
+      id: generate_service_name
+      run: |
+        if [ -z "${{ secrets.RENDER_SERVICE_NAME }}" ]; then
+          GENERATED_SERVICE_NAME="service-$(date +%s)"
+          echo "RENDER_SERVICE_NAME=$GENERATED_SERVICE_NAME" >> $GITHUB_ENV
+        else
+          echo "RENDER_SERVICE_NAME=${{ secrets.RENDER_SERVICE_NAME }}" >> $GITHUB_ENV
+        fi
 
     - name: Get Service ID
       id: get_service_id
       env:
         RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
-        RENDER_SERVICE_NAME: ${{ secrets.RENDER_SERVICE_NAME }}
+        RENDER_SERVICE_NAME: ${{ env.RENDER_SERVICE_NAME }}
       run: |
         echo "Fetching service ID for service name: $RENDER_SERVICE_NAME"
         RESPONSE=$(curl -s -H "Authorization: Bearer $RENDER_API_KEY" https://api.render.com/v1/services)
@@ -103,9 +111,8 @@ jobs:
         RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
         IMAGE_TAG: ${{ github.sha }}
         DOCKER_REPO: ${{ secrets.DOCKERHUB_USERNAME }}/img-oc-lettings
-        RENDER_SERVICE_NAME: ${{ secrets.RENDER_SERVICE_NAME }}
+        RENDER_SERVICE_NAME: ${{ env.RENDER_SERVICE_NAME }}
         OWNER_ID: ${{ env.OWNER_ID }}
-        SERVICE_ID: ${{ env.SERVICE_ID }}
       run: |
         if [ -z "$SERVICE_ID" ]; then
           echo "Creating new service: $RENDER_SERVICE_NAME"
@@ -113,7 +120,7 @@ jobs:
         {
         "service": {
           "name": "$RENDER_SERVICE_NAME",
-          "type": "web",
+          "type": "web_service",
           "env": "docker",
           "region": "oregon",
           "repo": "$DOCKER_REPO:$IMAGE_TAG",
@@ -124,37 +131,32 @@ jobs:
         EOF
         )
           echo "JSON Data: $JSON_DATA"
-          RESPONSE=$(curl -s -X POST -H "Authorization: Bearer $RENDER_API_KEY" -H "Content-Type: application/json" \
-            -d "$JSON_DATA" https://api.render.com/v1/services)
+          RESPONSE=$(curl -s -X POST -H "Authorization: Bearer $RENDER_API_KEY" -H "Content-Type: application/json" -d "$JSON_DATA" https://api.render.com/v1/services)
           echo "Create Service Response: $RESPONSE"
           SERVICE_ID=$(echo $RESPONSE | jq -r '.service.id')
-          if [ -z "$SERVICE_ID" ];then
+          if [ -z "$SERVICE_ID" ]; then
             echo "Failed to create service."
+            exit 1
           else
             echo "Created Service ID: $SERVICE_ID"
           fi
           echo "SERVICE_ID=$SERVICE_ID" >> $GITHUB_ENV
         else
           echo "Updating existing service with ID: $SERVICE_ID"
-          RESPONSE=$(curl -s -X PATCH -H "Authorization: Bearer $RENDER_API_KEY" -H "Content-Type: application/json" \
-            -d '{
-              "service": {
-                "repo": "'"$DOCKER_REPO:$IMAGE_TAG"'"
-              }
-            }' https://api.render.com/v1/services/$SERVICE_ID)
+          RESPONSE=$(curl -s -X PATCH -H "Authorization: Bearer $RENDER_API_KEY" -H "Content-Type: application/json" -d '{
+            "service": {
+              "repo": "'"$DOCKER_REPO:$IMAGE_TAG"'"
+            }
+          }' https://api.render.com/v1/services/$SERVICE_ID)
           echo "Update Service Response: $RESPONSE"
         fi
 
     - name: Deploy to Render
+      if: env.SERVICE_ID != ''
       env:
         RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
         SERVICE_ID: ${{ env.SERVICE_ID }}
       run: |
-        if [ -z "$SERVICE_ID" ]; then
-          echo "Service ID not found. Deployment aborted."
-          exit 1
-        fi
         echo "Deploying service with ID: $SERVICE_ID"
-        RESPONSE=$(curl -s -X POST -H "Authorization: Bearer $RENDER_API_KEY" \
-          https://api.render.com/v1/services/$SERVICE_ID/deploys)
+        RESPONSE=$(curl -s -X POST -H "Authorization: Bearer $RENDER_API_KEY" https://api.render.com/v1/services/$SERVICE_ID/deploys)
         echo "Deploy Response: $RESPONSE"

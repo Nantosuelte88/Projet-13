@@ -88,11 +88,9 @@ jobs:
         RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
         RENDER_SERVICE_NAME: ${{ secrets.RENDER_SERVICE_NAME }}
       run: |
-        SERVICE_NAME="$RENDER_SERVICE_NAME"
-        echo "Fetching service ID for service name: $SERVICE_NAME"
+        echo "Fetching service ID for service name: $RENDER_SERVICE_NAME"
         RESPONSE=$(curl -s -H "Authorization: Bearer $RENDER_API_KEY" https://api.render.com/v1/services)
-        echo "API Response: $RESPONSE"
-        SERVICE_ID=$(echo $RESPONSE | jq -r --arg NAME "$SERVICE_NAME" '.[] | select(.service.name == $NAME) | .service.id')
+        SERVICE_ID=$(echo $RESPONSE | jq -r --arg NAME "$RENDER_SERVICE_NAME" '.[] | select(.service.name == $NAME) | .service.id')
         if [ -z "$SERVICE_ID" ]; then
           echo "No matching service found."
         else
@@ -112,17 +110,17 @@ jobs:
         if [ -z "$SERVICE_ID" ]; then
           echo "Creating new service: $RENDER_SERVICE_NAME"
           JSON_DATA=$(cat <<EOF
-          {
-            "service": {
-              "name": "$RENDER_SERVICE_NAME",
-              "type": "web",
-              "env": "docker",
-              "region": "oregon",
-              "repo": "$DOCKER_REPO:$IMAGE_TAG",
-              "branch": "main",
-              "ownerId": "$OWNER_ID"
-            }
-          }
+        {
+        "service": {
+          "name": "$RENDER_SERVICE_NAME",
+          "type": "web",
+          "env": "docker",
+          "region": "oregon",
+          "repo": "$DOCKER_REPO:$IMAGE_TAG",
+          "branch": "main",
+          "ownerId": "$OWNER_ID"
+        }
+        }
         EOF
         )
           echo "JSON Data: $JSON_DATA"
@@ -130,7 +128,7 @@ jobs:
             -d "$JSON_DATA" https://api.render.com/v1/services)
           echo "Create Service Response: $RESPONSE"
           SERVICE_ID=$(echo $RESPONSE | jq -r '.service.id')
-          if [ -z "$SERVICE_ID" ]; then
+          if [ -z "$SERVICE_ID" ];then
             echo "Failed to create service."
           else
             echo "Created Service ID: $SERVICE_ID"

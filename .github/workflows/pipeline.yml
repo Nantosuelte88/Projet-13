@@ -125,7 +125,7 @@ jobs:
           "region": "oregon",
           "repo": "$DOCKER_REPO:$IMAGE_TAG",
           "branch": "main",
-          "ownerID": "$OWNER_ID"
+          "ownerID": "$OWNER_ID",
         }
         }
         EOF

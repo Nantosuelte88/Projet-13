@@ -106,7 +106,7 @@ jobs:
         fi
         echo "SERVICE_ID=$SERVICE_ID" >> $GITHUB_ENV
 
-    - name: Create or Update Render Service
+    - name: Create Render Service
       env:
         RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
         IMAGE_TAG: ${{ github.sha }}
@@ -114,51 +114,37 @@ jobs:
         RENDER_SERVICE_NAME: ${{ env.RENDER_SERVICE_NAME }}
         OWNER_ID: ${{ env.OWNER_ID }}
       run: |
+        echo "Creating new service: $RENDER_SERVICE_NAME"
+        JSON_DATA=$(jq -n \
+          --arg name "$RENDER_SERVICE_NAME" \
+          --arg type "web_service" \
+          --arg env "docker" \
+          --arg region "oregon" \
+          --arg repo "$DOCKER_REPO:$IMAGE_TAG" \
+          --arg branch "main" \
+          --arg ownerId "$OWNER_ID" \
+          '{
+            service: {
+              name: $name,
+              type: $type,
+              env: $env,
+              region: $region,
+              repo: $repo,
+              branch: $branch,
+              ownerId: $ownerId
+            }
+          }'
+        )
+        echo "JSON Data: $JSON_DATA"
+        RESPONSE=$(curl -s -X POST -H "Authorization: Bearer $RENDER_API_KEY" -H "Content-Type: application/json" -d "$JSON_DATA" https://api.render.com/v1/services)
+        echo "Create Service Response: $RESPONSE"
+        SERVICE_ID=$(echo $RESPONSE | jq -r '.id')
         if [ -z "$SERVICE_ID" ]; then
-          echo "Creating new service: $RENDER_SERVICE_NAME"
-          JSON_DATA=$(jq -n \
-            --arg name "$RENDER_SERVICE_NAME" \
-            --arg type "web_service" \
-            --arg env "docker" \
-            --arg region "oregon" \
-            --arg repo "$DOCKER_REPO:$IMAGE_TAG" \
-            --arg branch "main" \
-            --arg ownerId "$OWNER_ID" \
-            '{
-              service: {
-                name: $name,
-                type: $type,
-                env: $env,
-                region: $region,
-                repo: $repo,
-                branch: $branch,
-                ownerId: $ownerId
-              }
-            }'
-          )
-          echo "JSON Data: $JSON_DATA"
-          RESPONSE=$(curl -s -X POST -H "Authorization: Bearer $RENDER_API_KEY" -H "Content-Type: application/json" -d "$JSON_DATA" https://api.render.com/v1/services)
-          echo "Create Service Response: $RESPONSE"
-          SERVICE_ID=$(echo $RESPONSE | jq -r '.service.id')
-          if [ -z "$SERVICE_ID" ]; then
-            echo "Failed to create service."
-            exit 1
-          else
-            echo "Created Service ID: $SERVICE_ID"
-          fi
-          echo "SERVICE_ID=$SERVICE_ID" >> $GITHUB_ENV
+          echo "Failed to create service."
+          exit 1
         else
-          echo "Updating existing service with ID: $SERVICE_ID"
-          JSON_DATA=$(jq -n \
-            --arg repo "$DOCKER_REPO:$IMAGE_TAG" \
-            '{
-              service: {
-                repo: $repo
-              }
-            }'
-          )
-          RESPONSE=$(curl -s -X PATCH -H "Authorization: Bearer $RENDER_API_KEY" -H "Content-Type: application/json" -d "$JSON_DATA" https://api.render.com/v1/services/$SERVICE_ID)
-          echo "Update Service Response: $RESPONSE"
+          echo "Created Service ID: $SERVICE_ID"
+          echo "SERVICE_ID=$SERVICE_ID" >> $GITHUB_ENV
         fi
 
     - name: Deploy to Render

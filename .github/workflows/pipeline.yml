@@ -131,7 +131,7 @@ jobs:
               region: $region,
               repo: $repo,
               branch: $branch,
-              ownerId: $ownerId
+              ownerID: $ownerId
             }
           }'
         )

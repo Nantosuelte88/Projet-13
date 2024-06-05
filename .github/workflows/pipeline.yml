@@ -89,7 +89,7 @@ jobs:
           service_data = {
               "name": "my-service",
               "type": "web_service",
-              "env": "image",
+              "runtime": "docker",
               "region": "eu-central",
               "ownerID": "usr-cp6vtvicn0vc73a235n0",
               "serviceDetails": {

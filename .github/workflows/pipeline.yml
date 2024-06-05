@@ -90,13 +90,13 @@ jobs:
               "name": "my-service",
               "type": "web_service",
               "env": "docker",
-              "region": "eu-central",  # Région correcte pour Frankfurt (EU Central)
+              "region": "eu-central",
               "serviceDetails": {
-                  "plan": "free"
+                  "plan": "starter"
               },
               "docker": {
                   "image": f"{os.getenv('DOCKER_REPO')}:{os.getenv('IMAGE_TAG')}",
-                  "command": "python manage.py runserver 0.0.0.0:8000"  # Commande Docker correcte
+                  "command": "python manage.py runserver 0.0.0.0:8000"
               }
           }
 
@@ -104,14 +104,14 @@ jobs:
           if response.status_code == 201:
               service_id = response.json()["id"]
               print(f"Service created with ID: {service_id}")
+
+              # Déclencher le déploiement
+              deploy_url = f"{API_URL}/{service_id}/deploys"
+              deploy_response = requests.post(deploy_url, headers=headers)
+              if deploy_response.status_code == 201:
+                  print("Deployment triggered successfully.")
+              else:
+                  print(f"Error triggering deployment: {deploy_response.text}")
           else:
               print(f"Error creating service: {response.text}")
-
-          # Déclencher le déploiement
-          deploy_url = f"{API_URL}/{service_id}/deploys"
-          deploy_response = requests.post(deploy_url, headers=headers)
-          if deploy_response.status_code == 201:
-              print("Deployment triggered successfully.")
-          else:
-              print(f"Error triggering deployment: {deploy_response.text}")
           EOF

@@ -61,98 +61,55 @@ jobs:
           docker pull $DOCKER_REPO:$IMAGE_TAG
           docker run -d -p 8080:80 $DOCKER_REPO:$IMAGE_TAG
 
-  deploy_to_render:
+  create_and_deploy_render_service:
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
     needs: build_and_deploy_docker_image
 
     steps:
-    - name: Install jq
-      run: sudo apt-get install -y jq
+      - name: Install requests library
+        run: pip install requests
+      - name: Create and Deploy Render Service
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          IMAGE_TAG: ${{ github.sha }}
+          DOCKER_REPO: ${{ secrets.DOCKERHUB_USERNAME }}/img-oc-lettings
+        run: |
+          python - <<EOF
+          import requests
+          import json
 
-    - name: Get Owner ID
-      id: get_owner_id
-      env:
-        RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
-      run: |
-        echo "Fetching owner ID"
-        OWNER_RESPONSE=$(curl -s -H "Authorization: Bearer $RENDER_API_KEY" https://api.render.com/v1/owners)
-        OWNER_ID=$(echo $OWNER_RESPONSE | jq -r '.[0].owner.id')
-        echo "OWNER_ID=$OWNER_ID" >> $GITHUB_ENV
+          API_URL = "https://api.render.com/v1/services"
+          headers = {
+              "Authorization": f"Bearer {RENDER_API_KEY}",
+              "Content-Type": "application/json"
+          }
 
-    - name: Generate Service Name if Not Provided
-      id: generate_service_name
-      run: |
-        if [ -z "${{ secrets.RENDER_SERVICE_NAME }}" ]; then
-          GENERATED_SERVICE_NAME="service-$(date +%s)"
-          echo "RENDER_SERVICE_NAME=$GENERATED_SERVICE_NAME" >> $GITHUB_ENV
-        else
-          echo "RENDER_SERVICE_NAME=${{ secrets.RENDER_SERVICE_NAME }}" >> $GITHUB_ENV
-        fi
+          service_data = {
+              "name": "my-service",
+              "type": "web_service",
+              "env": "docker",
+              "region": "oregon",
+              "serviceDetails": {
+                  "plan": "free"
+              },
+              "docker": {
+                  "image": f"{DOCKER_REPO}:{IMAGE_TAG}",
+                  "command": "start-command"  # Ajustez la commande de démarrage
+              }
+          }
 
-    - name: Get Service ID
-      id: get_service_id
-      env:
-        RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
-        RENDER_SERVICE_NAME: ${{ env.RENDER_SERVICE_NAME }}
-      run: |
-        echo "Fetching service ID for service name: $RENDER_SERVICE_NAME"
-        RESPONSE=$(curl -s -H "Authorization: Bearer $RENDER_API_KEY" https://api.render.com/v1/services)
-        SERVICE_ID=$(echo $RESPONSE | jq -r --arg NAME "$RENDER_SERVICE_NAME" '.[] | select(.service.name == $NAME) | .service.id')
-        if [ -z "$SERVICE_ID" ]; then
-          echo "No matching service found."
-        else
-          echo "Found Service ID: $SERVICE_ID"
-        fi
-        echo "SERVICE_ID=$SERVICE_ID" >> $GITHUB_ENV
+          response = requests.post(API_URL, headers=headers, data=json.dumps(service_data))
+          if response.status_code == 201:
+              service_id = response.json()["id"]
+              print(f"Service created with ID: {service_id}")
+          else:
+              print(f"Error creating service: {response.text}")
 
-    - name: Create Render Service
-      env:
-        RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
-        IMAGE_TAG: ${{ github.sha }}
-        DOCKER_REPO: ${{ secrets.DOCKERHUB_USERNAME }}/img-oc-lettings
-        RENDER_SERVICE_NAME: ${{ env.RENDER_SERVICE_NAME }}
-        OWNER_ID: ${{ env.OWNER_ID }}
-      run: |
-        echo "Creating new service: $RENDER_SERVICE_NAME"
-        JSON_DATA=$(jq -n \
-          --arg name "$RENDER_SERVICE_NAME" \
-          --arg type "web_service" \
-          --arg env "docker" \
-          --arg region "oregon" \
-          --arg repo "$DOCKER_REPO:$IMAGE_TAG" \
-          --arg branch "main" \
-          --arg ownerId "$OWNER_ID" \
-          '{
-            service: {
-              name: $name,
-              type: $type,
-              env: $env,
-              region: $region,
-              repo: $repo,
-              branch: $branch,
-              ownerID: $ownerId
-            }
-          }'
-        )
-        echo "JSON Data: $JSON_DATA"
-        RESPONSE=$(curl -s -X POST -H "Authorization: Bearer $RENDER_API_KEY" -H "Content-Type: application/json" -d "$JSON_DATA" https://api.render.com/v1/services)
-        echo "Create Service Response: $RESPONSE"
-        SERVICE_ID=$(echo $RESPONSE | jq -r '.id')
-        if [ -z "$SERVICE_ID" ]; then
-          echo "Failed to create service."
-          exit 1
-        else
-          echo "Created Service ID: $SERVICE_ID"
-          echo "SERVICE_ID=$SERVICE_ID" >> $GITHUB_ENV
-        fi
-
-    - name: Deploy to Render
-      if: env.SERVICE_ID != ''
-      env:
-        RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
-        SERVICE_ID: ${{ env.SERVICE_ID }}
-      run: |
-        echo "Deploying service with ID: $SERVICE_ID"
-        RESPONSE=$(curl -s -X POST -H "Authorization: Bearer $RENDER_API_KEY" https://api.render.com/v1/services/$SERVICE_ID/deploys)
-        echo "Deploy Response: $RESPONSE"
+          # Déclencher le déploiement
+          deploy_url = f"{API_URL}/{service_id}/deploys"
+          deploy_response = requests.post(deploy_url, headers=headers)
+          if deploy_response.status_code == 201:
+              print("Deployment triggered successfully.")
+          else:
+              print(f"Error triggering deployment: {deploy_response.text}")
+          EOF

@@ -87,21 +87,20 @@ jobs:
           }
 
           service_data = {
-              "name": "my-service",
+              "name": "deploy-oc-lettings",
               "type": "web_service",
-              "runtime": ["docker"],
-              "region": "eu-central",
-              "ownerID": "usr-cp6vtvicn0vc73a235n0",
               "serviceDetails": {
+                  "runtime": "docker",
                   "plan": "starter"
               },
-              "docker": {
-                  "image": f"{os.getenv('DOCKER_REPO')}:{os.getenv('IMAGE_TAG')}",
-                  "command": "python manage.py runserver 0.0.0.0:8000"
-              }
+              "image": {
+                  "ownerId": "usr-cp6vtvicn0vc73a235n0",
+                  "imagePath": f"docker.io/{os.getenv('DOCKER_REPO')}:{os.getenv('IMAGE_TAG')}"
+              },
+              "ownerId": "usr-cp6vtvicn0vc73a235n0"
           }
 
-          response = requests.post(API_URL, headers=headers, data=json.dumps(service_data))
+          response = requests.post(API_URL, headers=headers, json=service_data)
           if response.status_code == 201:
               service_id = response.json()["id"]
               print(f"Service created with ID: {service_id}")

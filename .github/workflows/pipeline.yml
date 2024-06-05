@@ -54,64 +54,11 @@ jobs:
       - name: Build, tag, push, pull, and run Docker image
         env:
           IMAGE_TAG: ${{ github.sha }}
-          DOCKER_REPO: ${{ secrets.DOCKERHUB_USERNAME }}/img-oc-lettings
+          DOCKER_REPO: ${{ secrets.DOCKERHUB_USERNAME }}/image-oc-lettings
         run: |
           docker build . --file Dockerfile --tag $DOCKER_REPO:$IMAGE_TAG
           docker push $DOCKER_REPO:$IMAGE_TAG
           docker pull $DOCKER_REPO:$IMAGE_TAG
           docker run -d -p 8080:80 $DOCKER_REPO:$IMAGE_TAG
 
-  create_and_deploy_render_service:
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-    needs: build_and_deploy_docker_image
 
-    steps:
-      - name: Install requests library
-        run: pip install requests
-      - name: Create and Deploy Render Service
-        env:
-          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
-          IMAGE_TAG: ${{ github.sha }}
-          DOCKER_REPO: ${{ secrets.DOCKERHUB_USERNAME }}/img-oc-lettings
-        run: |
-          python - <<EOF
-          import os
-          import requests
-          import json
-
-          API_URL = "https://api.render.com/v1/services"
-          headers = {
-              "Authorization": f"Bearer {os.getenv('RENDER_API_KEY')}",
-              "Content-Type": "application/json"
-          }
-
-          service_data = {
-              "name": "deploy-oc-lettings",
-              "type": "web_service",
-              "serviceDetails": {
-                  "runtime": "docker",
-                  "plan": "starter"
-              },
-              "image": {
-                  "ownerId": "usr-cp6vtvicn0vc73a235n0",
-                  "imagePath": f"docker.io/{os.getenv('DOCKER_REPO')}:{os.getenv('IMAGE_TAG')}"
-              },
-              "ownerId": "usr-cp6vtvicn0vc73a235n0"
-          }
-
-          response = requests.post(API_URL, headers=headers, json=service_data)
-          if response.status_code == 201:
-              service_id = response.json()["id"]
-              print(f"Service created with ID: {service_id}")
-
-              # Déclencher le déploiement
-              deploy_url = f"{API_URL}/{service_id}/deploys"
-              deploy_response = requests.post(deploy_url, headers=headers)
-              if deploy_response.status_code == 201:
-                  print("Deployment triggered successfully.")
-              else:
-                  print(f"Error triggering deployment: {deploy_response.text}")
-          else:
-              print(f"Error creating service: {response.text}")
-          EOF

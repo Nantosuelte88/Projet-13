@@ -63,6 +63,7 @@ jobs:
 
   create_and_deploy_render_service:
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
     needs: build_and_deploy_docker_image
 
     steps:
@@ -75,12 +76,13 @@ jobs:
           DOCKER_REPO: ${{ secrets.DOCKERHUB_USERNAME }}/img-oc-lettings
         run: |
           python - <<EOF
+          import os
           import requests
           import json
 
           API_URL = "https://api.render.com/v1/services"
           headers = {
-              "Authorization": f"Bearer {RENDER_API_KEY}",
+              "Authorization": f"Bearer {os.getenv('RENDER_API_KEY')}",
               "Content-Type": "application/json"
           }
 
@@ -88,13 +90,13 @@ jobs:
               "name": "my-service",
               "type": "web_service",
               "env": "docker",
-              "region": "oregon",
+              "region": "eu-central",  # Région correcte pour Frankfurt (EU Central)
               "serviceDetails": {
                   "plan": "free"
               },
               "docker": {
-                  "image": f"{DOCKER_REPO}:{IMAGE_TAG}",
-                  "command": "start-command"  # Ajustez la commande de démarrage
+                  "image": f"{os.getenv('DOCKER_REPO')}:{os.getenv('IMAGE_TAG')}",
+                  "command": "python manage.py runserver 0.0.0.0:8000"  # Commande Docker correcte
               }
           }
 

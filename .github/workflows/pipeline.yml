@@ -116,20 +116,26 @@ jobs:
       run: |
         if [ -z "$SERVICE_ID" ]; then
           echo "Creating new service: $RENDER_SERVICE_NAME"
-          JSON_DATA=$(cat <<EOF
-        {
-        "service": {
-          "name": "$RENDER_SERVICE_NAME",
-          "type": "web_service",
-          "env": "docker",
-          "region": "oregon",
-          "repo": "$DOCKER_REPO:$IMAGE_TAG",
-          "branch": "main",
-          "ownerID": "$OWNER_ID",
-        }
-        }
-        EOF
-        )
+          JSON_DATA=$(jq -n \
+            --arg name "$RENDER_SERVICE_NAME" \
+            --arg type "web_service" \
+            --arg env "docker" \
+            --arg region "oregon" \
+            --arg repo "$DOCKER_REPO:$IMAGE_TAG" \
+            --arg branch "main" \
+            --arg ownerId "$OWNER_ID" \
+            '{
+              service: {
+                name: $name,
+                type: $type,
+                env: $env,
+                region: $region,
+                repo: $repo,
+                branch: $branch,
+                ownerId: $ownerId
+              }
+            }'
+          )
           echo "JSON Data: $JSON_DATA"
           RESPONSE=$(curl -s -X POST -H "Authorization: Bearer $RENDER_API_KEY" -H "Content-Type: application/json" -d "$JSON_DATA" https://api.render.com/v1/services)
           echo "Create Service Response: $RESPONSE"
@@ -143,11 +149,15 @@ jobs:
           echo "SERVICE_ID=$SERVICE_ID" >> $GITHUB_ENV
         else
           echo "Updating existing service with ID: $SERVICE_ID"
-          RESPONSE=$(curl -s -X PATCH -H "Authorization: Bearer $RENDER_API_KEY" -H "Content-Type: application/json" -d '{
-            "service": {
-              "repo": "'"$DOCKER_REPO:$IMAGE_TAG"'"
-            }
-          }' https://api.render.com/v1/services/$SERVICE_ID)
+          JSON_DATA=$(jq -n \
+            --arg repo "$DOCKER_REPO:$IMAGE_TAG" \
+            '{
+              service: {
+                repo: $repo
+              }
+            }'
+          )
+          RESPONSE=$(curl -s -X PATCH -H "Authorization: Bearer $RENDER_API_KEY" -H "Content-Type: application/json" -d "$JSON_DATA" https://api.render.com/v1/services/$SERVICE_ID)
           echo "Update Service Response: $RESPONSE"
         fi
 

@@ -82,7 +82,7 @@ jobs:
           echo "API response: $response"
           
           # Extract the service ID
-          SERVICE_ID=$(echo $response | jq -r --arg NAME "$RENDER_SERVICE_NAME" '.[] | select(.service.name==$NAME) | .id')
+          SERVICE_ID=$(echo $response | jq -r --arg NAME "$RENDER_SERVICE_NAME" '.[] | select(.service.name==$NAME) | .service.id')
           
           # Debug: Print the service ID
           echo "Extracted Service ID: $SERVICE_ID"

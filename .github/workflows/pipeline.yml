@@ -61,4 +61,33 @@ jobs:
           docker pull $DOCKER_REPO:$IMAGE_TAG
           docker run -d -p 8080:80 $DOCKER_REPO:$IMAGE_TAG
 
+  deploy_to_render:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    needs: build_and_deploy_docker_image
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Get Render Service ID and Deploy
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_SERVICE_NAME: ${{ secrets.RENDER_SERVICE_NAME }}
+          DOCKER_REPO: ${{ secrets.DOCKERHUB_USERNAME }}/image-oc-lettings
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          response=$(curl -s -H "Authorization: Bearer $RENDER_API_KEY" https://api.render.com/v1/services)
+          SERVICE_ID=$(echo $response | jq -r --arg NAME "$RENDER_SERVICE_NAME" '.[] | select(.serviceName==$NAME) | .id')
+          if [ -z "$SERVICE_ID" ]; then
+            echo "Service ID not found!"
+            exit 1
+          fi
+          echo "Found Service ID: $SERVICE_ID"
+          curl -X POST \
+            -H "Authorization: Bearer $RENDER_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "serviceId": "'"$SERVICE_ID"'",
+              "image": "'"$DOCKER_REPO:$IMAGE_TAG"'"
+            }' \
+            https://api.render.com/v1/services/$SERVICE_ID/deploys
 

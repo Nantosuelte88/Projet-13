@@ -78,14 +78,8 @@ jobs:
         run: |
           response=$(curl -s -H "Authorization: Bearer $RENDER_API_KEY" https://api.render.com/v1/services)
           
-          # Debug: Print the response
-          echo "API response: $response"
-          
           # Extract the service ID
           SERVICE_ID=$(echo $response | jq -r --arg NAME "$RENDER_SERVICE_NAME" '.[] | select(.service.name==$NAME) | .service.id')
-          
-          # Debug: Print the service ID
-          echo "Extracted Service ID: $SERVICE_ID"
           
           # Check if SERVICE_ID is empty
           if [ -z "$SERVICE_ID" ]; then
@@ -93,7 +87,6 @@ jobs:
             exit 1
           fi
           
-          echo "Found Service ID: $SERVICE_ID"
           echo "SERVICE_ID=$SERVICE_ID" >> $GITHUB_ENV
       - name: Deploy to Render
         env:
@@ -110,4 +103,3 @@ jobs:
               "image": "'"$DOCKER_REPO:$IMAGE_TAG"'"
             }' \
             https://api.render.com/v1/services/$SERVICE_ID/deploys
-

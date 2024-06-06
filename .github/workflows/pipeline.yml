@@ -68,20 +68,40 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - name: Get Render Service ID and Deploy
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+      - name: Get Render Service ID
+        id: get_service_id
         env:
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
           RENDER_SERVICE_NAME: ${{ secrets.RENDER_SERVICE_NAME }}
-          DOCKER_REPO: ${{ secrets.DOCKERHUB_USERNAME }}/image-oc-lettings
-          IMAGE_TAG: ${{ github.sha }}
         run: |
           response=$(curl -s -H "Authorization: Bearer $RENDER_API_KEY" https://api.render.com/v1/services)
-          SERVICE_ID=$(echo $response | jq -r --arg NAME "$RENDER_SERVICE_NAME" '.[] | select(.serviceName==$NAME) | .id')
+          
+          # Debug: Print the response
+          echo "API response: $response"
+          
+          # Extract the service ID
+          SERVICE_ID=$(echo $response | jq -r --arg NAME "$RENDER_SERVICE_NAME" '.[] | select(.service.name==$NAME) | .id')
+          
+          # Debug: Print the service ID
+          echo "Extracted Service ID: $SERVICE_ID"
+          
+          # Check if SERVICE_ID is empty
           if [ -z "$SERVICE_ID" ]; then
             echo "Service ID not found!"
             exit 1
           fi
+          
           echo "Found Service ID: $SERVICE_ID"
+          echo "SERVICE_ID=$SERVICE_ID" >> $GITHUB_ENV
+      - name: Deploy to Render
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          SERVICE_ID: ${{ env.SERVICE_ID }}
+          DOCKER_REPO: ${{ secrets.DOCKERHUB_USERNAME }}/image-oc-lettings
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
           curl -X POST \
             -H "Authorization: Bearer $RENDER_API_KEY" \
             -H "Content-Type: application/json" \

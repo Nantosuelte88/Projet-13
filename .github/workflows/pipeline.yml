@@ -54,7 +54,7 @@ jobs:
       - name: Build, tag, push, pull, and run Docker image
         env:
           IMAGE_TAG: ${{ github.sha }}
-          DOCKER_REPO: ${{ secrets.DOCKERHUB_USERNAME }}/img-oc-lettings
+          DOCKER_REPO: ${{ secrets.DOCKERHUB_USERNAME }}/image-oc-lettings
         run: |
           docker build . --file Dockerfile --tag $DOCKER_REPO:$IMAGE_TAG
           docker push $DOCKER_REPO:$IMAGE_TAG
@@ -67,72 +67,39 @@ jobs:
     needs: build_and_deploy_docker_image
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
+      - uses: actions/checkout@v4
       - name: Install jq
-        run: sudo apt-get install -y jq
-
-      - name: Get Render Owner ID
+        run: sudo apt-get update && sudo apt-get install -y jq
+      - name: Get Render Service ID
+        id: get_service_id
         env:
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_SERVICE_NAME: ${{ secrets.RENDER_SERVICE_NAME }}
         run: |
-          RESPONSE=$(curl -s -X GET -H "Authorization: Bearer $RENDER_API_KEY" https://api.render.com/v1/owners)
-          echo "Response: $RESPONSE"
-          if [ -z "$RESPONSE" ]; then
-            echo "Error: No response from Render API"
+          response=$(curl -s -H "Authorization: Bearer $RENDER_API_KEY" https://api.render.com/v1/services)
+          
+          # Extract the service ID
+          SERVICE_ID=$(echo $response | jq -r --arg NAME "$RENDER_SERVICE_NAME" '.[] | select(.service.name==$NAME) | .service.id')
+          
+          # Check if SERVICE_ID is empty
+          if [ -z "$SERVICE_ID" ]; then
+            echo "Service ID not found!"
             exit 1
           fi
-          OWNER_ID=$(echo "$RESPONSE" | jq -r '.[0].owner.id')
-          echo "Extracted OWNER_ID: $OWNER_ID"
-          if [ "$OWNER_ID" == "null" ] || [ -z "$OWNER_ID" ]; then
-            echo "Error: ownerID not found in the response"
-            echo "Response: $RESPONSE"
-            exit 1
-          fi
-          echo "OWNER_ID=$OWNER_ID" >> $GITHUB_ENV
-
+          
+          echo "SERVICE_ID=$SERVICE_ID" >> $GITHUB_ENV
       - name: Deploy to Render
         env:
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
-          DOCKER_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/img-oc-lettings:${{ github.sha }}
-          SERVICE_NAME: oc-lettings-deploy-${{ github.sha }}
-          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
-          OWNER_ID: ${{ env.OWNER_ID }}
+          SERVICE_ID: ${{ env.SERVICE_ID }}
+          DOCKER_REPO: ${{ secrets.DOCKERHUB_USERNAME }}/image-oc-lettings
+          IMAGE_TAG: ${{ github.sha }}
         run: |
-          echo "Creating new service on Render"
-          echo "OWNER_ID for deployment: $OWNER_ID"
-
-          # Create the JSON payload
-          JSON_PAYLOAD=$(jq -n \
-            --arg serviceName "$SERVICE_NAME" \
-            --arg dockerImage "$DOCKER_IMAGE" \
-            --arg ownerId "$OWNER_ID" \
-            --arg sentryDsn "$SENTRY_DSN" \
-            '{
-              serviceDetails: {
-                name: $serviceName,
-                type: "web",
-                env: "docker",
-                dockerfilePath: "Dockerfile",
-                buildCommand: ("docker build -t " + $dockerImage + " ."),
-                startCommand: ("docker run -p 8000:8000 " + $dockerImage),
-                ownerID: $ownerId
-              },
-              envVars: [
-                { key: "DJANGO_ALLOWED_HOSTS", value: ($serviceName + ".onrender.com") },
-                { key: "SENTRY_DSN", value: $sentryDsn }
-              ],
-              region: "frankfurt",
-              planId: "render.com/freetier"
-            }')
-
-          # Display the JSON payload for debugging purposes
-          echo "JSON Payload: $JSON_PAYLOAD"
-
-          # Send the JSON payload using curl
           curl -X POST \
             -H "Authorization: Bearer $RENDER_API_KEY" \
             -H "Content-Type: application/json" \
-            -d "$JSON_PAYLOAD" \
-            https://api.render.com/v1/services
+            -d '{
+              "serviceId": "'"$SERVICE_ID"'",
+              "image": "'"$DOCKER_REPO:$IMAGE_TAG"'"
+            }' \
+            https://api.render.com/v1/services/$SERVICE_ID/deploys

@@ -90,6 +90,7 @@ Pour le déploiement de cette application, nous utilisons le service Render. Pou
    - DOCKERHUB_PASSWORD
    - DOCKERHUB_USERNAME
    - RENDER_API_KEY (disponible dans vos paramètres sur le site Render -> API Keys -> Create API Key)
+   - SECRET_KEY (qui est la clé secrete de votre application Django)
 
 ### Création de l'image Docker
 

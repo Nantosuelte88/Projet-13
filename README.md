@@ -25,37 +25,41 @@ Dans le reste de la documentation sur le développement local, il est supposé q
 - `cd /path/to/Python-OC-Lettings-FR`
 - `python -m venv venv`
 - `apt-get install python3-venv` (Si l'étape précédente comporte des erreurs avec un paquet non trouvé sur Ubuntu)
-- Activer l'environnement `source venv/bin/activate`
-- Confirmer que la commande `python` exécute l'interpréteur Python dans l'environnement virtuel
-`which python`
+- Activer l'environnement sur Unix et MacOS `source venv/bin/activate`
+- Pour l'activer sur Windows (Pas de ".bat" sous Powershell) `env\Scripts\activate.bat`
 - Confirmer que la version de l'interpréteur Python est la version 3.6 ou supérieure `python --version`
-- Confirmer que la commande `pip` exécute l'exécutable pip dans l'environnement virtuel, `which pip`
+- Confirmer que la commande `pip` exécute l'exécutable pip dans l'environnement virtuel, `pip --version`
 - Pour désactiver l'environnement, `deactivate`
+
+#### Mise en place
+
+- Activez l'environnement virtuel
+- Installez les dépendances du projet en exécutant `pip install --requirement requirements.txt`
+- Renommez le fichier "env" en ".env"
+- Pour la valeur de "SENTRY_DSN=", trouvez le lien correspondant dans les paramètres de votre compte Sentry
+- Pour la valeur de "SECRET_KEY=", exécutez `python create_secret_key.py` dans la console (vous pouvez supprimer le fichier après)
+- Copiez la clé générée qui s'affiche dans la console
+- Sauvegardez le fichier .env
+- À la racine du projet, exécutez `python manage.py collecstatic`
 
 #### Exécuter le site
 
-- `cd /path/to/Python-OC-Lettings-FR`
-- `source venv/bin/activate`
-- `pip install --requirement requirements.txt`
 - `python manage.py runserver`
 - Aller sur `http://localhost:8000` dans un navigateur.
 - Confirmer que le site fonctionne et qu'il est possible de naviguer (vous devriez voir plusieurs profils et locations).
 
 #### Linting
 
-- `cd /path/to/Python-OC-Lettings-FR`
 - `source venv/bin/activate`
 - `flake8`
 
 #### Tests unitaires
 
-- `cd /path/to/Python-OC-Lettings-FR`
 - `source venv/bin/activate`
 - `pytest`
 
 #### Base de données
 
-- `cd /path/to/Python-OC-Lettings-FR`
 - Ouvrir une session shell `sqlite3`
 - Se connecter à la base de données `.open oc-lettings-site.sqlite3`
 - Afficher les tables dans la base de données `.tables`
@@ -69,12 +73,6 @@ Dans le reste de la documentation sur le développement local, il est supposé q
 - Aller sur `http://localhost:8000/admin`
 - Connectez-vous avec l'utilisateur `admin`, mot de passe `Abc1234!`
 
-### Windows
-
-Utilisation de PowerShell, comme ci-dessus sauf :
-
-- Pour activer l'environnement virtuel, `.\venv\Scripts\Activate.ps1` 
-- Remplacer `which <my-command>` par `(Get-Command <my-command>).Path`
 
 ## Déploiement
 

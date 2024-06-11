@@ -116,6 +116,13 @@ jobs:
           echo "OWNER_ID=$OWNER_ID" >> $GITHUB_ENV
       - name: Debug Print DOCKER_OWNER_ID
         run: echo "DOCKER_OWNER_ID=${{ env.DOCKER_OWNER_ID }}"
+      - name: Pre-Deployment Check
+        run: |
+          if [ -z "${{ env.SERVICE_ID }}" ] || [ -z "${{ env.DOCKER_OWNER_ID }}" ] || [ -z "${{ github.sha }}" ]; then
+            echo "One of the required variables is not set. Exiting."
+            exit 1
+          fi
+  
       - name: Deploy to Render
         id: deploy_to_render
         env:
@@ -145,18 +152,20 @@ jobs:
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
           SERVICE_ID: ${{ env.SERVICE_ID }}
         run: |
-          sleep 30
-          response=$(curl -s -H "Authorization: Bearer $RENDER_API_KEY" https://api.render.com/v1/services/$SERVICE_ID)
-          echo "API response: $response"
-          deploy_status=$(echo $response | jq -r '.status')
-          updated_at=$(echo $response | jq -r '.updatedAt')
-          echo "Render service deployment status: $deploy_status"
-          echo "Render service updated at: $updated_at"
-          if [ -z "$deploy_status" ] || [ "$deploy_status" == "null" ]; then
-            echo "Deployment status is not available!"
-            exit 1
-          fi
-          if [ "$deploy_status" != "live" ]; then
-            echo "Deployment did not succeed!"
-            exit 1
-          fi
+          echo "Checking deployment status for service ID: $SERVICE_ID"
+          for i in {1..10}; do
+            sleep 30
+            response=$(curl -s -H "Authorization: Bearer $RENDER_API_KEY" https://api.render.com/v1/services/$SERVICE_ID)
+            echo "API response: $response"
+            deploy_status=$(echo $response | jq -r '.status')
+            updated_at=$(echo $response | jq -r '.updatedAt')
+            echo "Render service deployment status: $deploy_status"
+            echo "Render service updated at: $updated_at"
+            if [ "$deploy_status" == "live" ]; then
+              echo "Deployment succeeded!"
+              exit 0
+            fi
+            echo "Deployment still in progress, checking again in 30 seconds..."
+          done
+          echo "Deployment did not succeed within the expected time frame!"
+          exit 1

@@ -122,7 +122,7 @@ jobs:
           SERVICE_ID: ${{ env.SERVICE_ID }}
           DOCKER_REPO: ${{ secrets.DOCKERHUB_USERNAME }}/image-oc-lettings
           IMAGE_TAG: ${{ github.sha }}
-          DOCKER_OWNER_ID: ${{ env.DOCKER_OWNER_ID }}
+          OWNER_ID: ${{ env.OWNER_ID }}
         run: |
           curl -X POST \
             -H "Authorization: Bearer $RENDER_API_KEY" \
@@ -130,7 +130,7 @@ jobs:
             -d '{
               "serviceId": "'"$SERVICE_ID"'",
               "image": {
-                "ownerId": "'"$DOCKER_OWNER_ID"'",
+                "ownerId": "'"$OWNER_ID"'",
                 "repository": "'"$DOCKER_REPO"'",
                 "imagePath": "'"$DOCKER_REPO:$IMAGE_TAG"'"
               }

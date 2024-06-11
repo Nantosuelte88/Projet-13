@@ -112,6 +112,9 @@ jobs:
         run: echo "SERVICE_ID=${{ env.SERVICE_ID }}"
       - name: Debug Print IMAGE_TAG
         run: echo "IMAGE_TAG=${{ github.sha }}"
+
+      - name: Debug Print FULL_IMAGE_NAME
+        run: echo "FULL_IMAGE_NAME=${{ env.FULL_IMAGE_NAME }}"
   
       - name: Wait for 30 seconds
         run: sleep 30

@@ -105,12 +105,15 @@ jobs:
         run: echo "SERVICE_ID=${{ env.SERVICE_ID }}"
       - name: Debug Print IMAGE_TAG
         run: echo "IMAGE_TAG=${{ github.sha }}"
-      - name: Get Docker image owner ID
-        id: get_docker_owner_id
+      - name: Get Owner ID
+        id: get_owner_id
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
         run: |
-          response=$(curl -s -H "Authorization: Bearer $RENDER_API_KEY" https://api.render.com/v1/services/$SERVICE_ID)
-          DOCKER_OWNER_ID=$(echo $response | jq -r '.service.image.ownerId')
-          echo "DOCKER_OWNER_ID=$DOCKER_OWNER_ID" >> $GITHUB_ENV
+          echo "Fetching owner ID"
+          OWNER_RESPONSE=$(curl -s -H "Authorization: Bearer $RENDER_API_KEY" https://api.render.com/v1/owners)
+          OWNER_ID=$(echo $OWNER_RESPONSE | jq -r '.[0].id')
+          echo "OWNER_ID=$OWNER_ID" >> $GITHUB_ENV
       - name: Debug Print DOCKER_OWNER_ID
         run: echo "DOCKER_OWNER_ID=${{ env.DOCKER_OWNER_ID }}"
       - name: Deploy to Render

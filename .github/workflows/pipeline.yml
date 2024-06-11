@@ -101,6 +101,10 @@ jobs:
           fi
           
           echo "SERVICE_ID=$SERVICE_ID" >> $GITHUB_ENV
+      - name: Debug Print SERVICE_ID
+        run: echo "SERVICE_ID=${{ env.SERVICE_ID }}"
+      - name: Debug Print IMAGE_TAG
+        run: echo "IMAGE_TAG=${{ github.sha }}"
       - name: Deploy to Render
         env:
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
@@ -116,3 +120,7 @@ jobs:
               "image": "'"$DOCKER_REPO:$IMAGE_TAG"'"
             }' \
             https://api.render.com/v1/services/$SERVICE_ID/deploys
+      - name: Debug Check Render deployment status
+        run: |
+          curl -s -H "Authorization: Bearer $RENDER_API_KEY" https://api.render.com/v1/services/$SERVICE_ID | jq .
+

@@ -104,7 +104,14 @@ jobs:
       - name: Debug Print SERVICE_ID
         run: echo "SERVICE_ID=${{ env.SERVICE_ID }}"
       - name: Debug Print IMAGE_TAG
-        run: echo "IMAGE_TAG=${{ github.sha }}"
+        run: echo "IMAGE_TAG=${{ env.IMAGE_TAG }}"
+  
+      - name: Debug Print FULL_IMAGE_NAME
+        run: echo "FULL_IMAGE_NAME=${{ env.FULL_IMAGE_NAME }}"
+  
+      - name: Wait for 30 seconds
+        run: sleep 30
+  
       - name: Get Owner ID
         id: get_owner_id
         env:
@@ -113,19 +120,21 @@ jobs:
           echo "Fetching owner ID"
           OWNER_RESPONSE=$(curl -s -H "Authorization: Bearer $RENDER_API_KEY" https://api.render.com/v1/owners)
           echo "API Response: $OWNER_RESPONSE"
-          OWNER_ID=$(echo $OWNER_RESPONSE | jq -r '.[0].owner.id')
+          OWNER_ID=$(echo $OWNER_RESPONSE | jq -r '.[0].id')
           if [ -z "$OWNER_ID" ] || [ "$OWNER_ID" == "null" ]; then
             echo "Owner ID not found!"
             exit 1
           fi
           echo "OWNER_ID=$OWNER_ID" >> $GITHUB_ENV
+  
       - name: Debug Print OWNER_ID
         run: echo "OWNER_ID=${{ env.OWNER_ID }}"
+  
       - name: Pre-Deployment Check
-        env : 
-          SERVICE_ID: ${{ env.SERVICE_ID }}
+        env:
+          SERVICE_ID: ${{ secrets.SERVICE_ID }}
           OWNER_ID: ${{ env.OWNER_ID }}
-          IMAGE_TAG: ${{ github.sha }}          
+          IMAGE_TAG: ${{ env.IMAGE_TAG }}
         run: |
           if [ -z "$SERVICE_ID" ] || [ -z "$OWNER_ID" ] || [ -z "$IMAGE_TAG" ]; then
             echo "One of the required variables is not set. Exiting."
@@ -133,48 +142,40 @@ jobs:
           fi
   
       - name: Deploy to Render
-        id: deploy_to_render
         env:
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
-          SERVICE_ID: ${{ env.SERVICE_ID }}
-          DOCKER_REPO: ${{ secrets.DOCKERHUB_USERNAME }}/image-oc-lettings
-          IMAGE_TAG: ${{ github.sha }}
-          OWNER_ID: ${{ env.DOCKER_OWNER_ID }}
+          SERVICE_ID: ${{ secrets.SERVICE_ID }}
+          FULL_IMAGE_NAME: ${{ env.FULL_IMAGE_NAME }}
         run: |
-          FULL_IMAGE_NAME="$DOCKER_REPO:$IMAGE_TAG"
           echo "Deploying image: $FULL_IMAGE_NAME"
-          response=$(curl -s -X POST \
+          DEPLOY_RESPONSE=$(curl -X POST \
             -H "Authorization: Bearer $RENDER_API_KEY" \
             -H "Content-Type: application/json" \
             -d '{
               "serviceId": "'"$SERVICE_ID"'",
-              "image": {
-                "ownerId": "'"$OWNER_ID"'",
-                "imagePath": "'"$FULL_IMAGE_NAME"'"
-              }
+              "imagePath": "'"$FULL_IMAGE_NAME"'"
             }' \
             https://api.render.com/v1/services/$SERVICE_ID/deploys)
-          echo "Deployment response: $response"
+          echo "Deployment response: $DEPLOY_RESPONSE"
   
       - name: Check Render Deployment Status
         env:
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
-          SERVICE_ID: ${{ env.SERVICE_ID }}
+          SERVICE_ID: ${{ secrets.SERVICE_ID }}
+          OWNER_ID: ${{ env.OWNER_ID }}
         run: |
-          echo "Checking deployment status for service ID: $SERVICE_ID"
-          for i in {1..10}; do
-            sleep 30
-            response=$(curl -s -H "Authorization: Bearer $RENDER_API_KEY" https://api.render.com/v1/services/$SERVICE_ID)
-            echo "API response: $response"
-            deploy_status=$(echo $response | jq -r '.status')
-            updated_at=$(echo $response | jq -r '.updatedAt')
-            echo "Render service deployment status: $deploy_status"
-            echo "Render service updated at: $updated_at"
-            if [ "$deploy_status" == "live" ]; then
-              echo "Deployment succeeded!"
-              exit 0
-            fi
-            echo "Deployment still in progress, checking again in 30 seconds..."
-          done
-          echo "Deployment did not succeed within the expected time frame!"
-          exit 1
+          sleep 30
+          response=$(curl -s -H "Authorization: Bearer $RENDER_API_KEY" https://api.render.com/v1/services/$SERVICE_ID)
+          echo "API response: $response"
+          deploy_status=$(echo $response | jq -r '.status')
+          updated_at=$(echo $response | jq -r '.updatedAt')
+          echo "Render service deployment status: $deploy_status"
+          echo "Render service updated at: $updated_at"
+          if [ -z "$deploy_status" ] || [ "$deploy_status" == "null" ]; then
+            echo "Deployment status is not available!"
+            exit 1
+          fi
+          if [ "$deploy_status" != "live" ]; then
+            echo "Deployment did not succeed!"
+            exit 1
+          fi

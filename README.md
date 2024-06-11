@@ -15,10 +15,11 @@ Dans le reste de la documentation sur le développement local, il est supposé q
 
 ### macOS / Linux
 
-#### Cloner le repository
+#### Cloner ou télécharger le repository
 
 - `cd /path/to/put/project/in`
-- `git clone https://github.com/OpenClassrooms-Student-Center/Python-OC-Lettings-FR.git`
+- `git clone https://github.com/Nantosuelte88/Projet-13.git`
+- ou "Download ZIP"
 
 #### Créer l'environnement virtuel
 

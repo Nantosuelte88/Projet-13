@@ -112,7 +112,12 @@ jobs:
         run: |
           echo "Fetching owner ID"
           OWNER_RESPONSE=$(curl -s -H "Authorization: Bearer $RENDER_API_KEY" https://api.render.com/v1/owners)
+          echo "API Response: $OWNER_RESPONSE"
           OWNER_ID=$(echo $OWNER_RESPONSE | jq -r '.[0].id')
+          if [ -z "$OWNER_ID" ] || [ "$OWNER_ID" == "null" ]; then
+            echo "Owner ID not found!"
+            exit 1
+          fi
           echo "OWNER_ID=$OWNER_ID" >> $GITHUB_ENV
       - name: Debug Print OWNER_ID
         run: echo "OWNER_ID=${{ env.OWNER_ID }}"

@@ -16,5 +16,9 @@ RUN python manage.py collectstatic --noinput
 # On expose le port sur lequel l'application écoute
 EXPOSE 8000
 
+# Passe SECRET_KEY en variable d'environnement
+ARG SECRET_KEY
+ENV SECRET_KEY=${SECRET_KEY}
+
 # On définit la commande par défaut pour exécuter l'application Django
 CMD python manage.py runserver 0.0.0.0:8000

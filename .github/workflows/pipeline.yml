@@ -129,7 +129,7 @@ jobs:
   
       - name: Pre-Deployment Check
         env:
-          SERVICE_ID: ${{ secrets.SERVICE_ID }}
+          SERVICE_ID: ${{ env.SERVICE_ID }}
           OWNER_ID: ${{ env.OWNER_ID }}
           IMAGE_TAG: ${{ env.IMAGE_TAG }}
         run: |
@@ -141,7 +141,7 @@ jobs:
       - name: Deploy to Render
         env:
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
-          SERVICE_ID: ${{ secrets.SERVICE_ID }}
+          SERVICE_ID: ${{ env.SERVICE_ID }}
           FULL_IMAGE_NAME: ${{ env.FULL_IMAGE_NAME }}
         run: |
           echo "Deploying image: $FULL_IMAGE_NAME"

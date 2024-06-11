@@ -53,14 +53,24 @@ jobs:
           DOCKERHUB_EMAIL: ${{ secrets.DOCKERHUB_EMAIL }}
         run: |
           echo ${{ secrets.DOCKERHUB_PASSWORD }} | docker login -u $DOCKERHUB_EMAIL --password-stdin
-      - name: Build, tag, push, pull, and run Docker image
+      - name: Build Docker image
         env:
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
           IMAGE_TAG: ${{ github.sha }}
           DOCKER_REPO: ${{ secrets.DOCKERHUB_USERNAME }}/image-oc-lettings
         run: |
-          docker build . --file Dockerfile --tag $DOCKER_REPO:$IMAGE_TAG
+          docker build . --file Dockerfile --tag $DOCKER_REPO:$IMAGE_TAG --build-arg SECRET_KEY=$SECRET_KEY
+      - name: Push Docker image
+        env:
+          DOCKER_REPO: ${{ secrets.DOCKERHUB_USERNAME }}/image-oc-lettings
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
           docker push $DOCKER_REPO:$IMAGE_TAG
+      - name: Run Docker container
+        env:
+          DOCKER_REPO: ${{ secrets.DOCKERHUB_USERNAME }}/image-oc-lettings
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
           docker pull $DOCKER_REPO:$IMAGE_TAG
           docker run -d -p 8080:80 $DOCKER_REPO:$IMAGE_TAG
 

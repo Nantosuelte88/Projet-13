@@ -117,6 +117,7 @@ jobs:
       - name: Debug Print DOCKER_OWNER_ID
         run: echo "DOCKER_OWNER_ID=${{ env.DOCKER_OWNER_ID }}"
       - name: Deploy to Render
+        id: deploy_to_render
         env:
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
           SERVICE_ID: ${{ env.SERVICE_ID }}
@@ -124,14 +125,30 @@ jobs:
           IMAGE_TAG: ${{ github.sha }}
           OWNER_ID: ${{ env.DOCKER_OWNER_ID }}
         run: |
-          curl -X PATCH \
+          FULL_IMAGE_NAME="$DOCKER_REPO:$IMAGE_TAG"
+          response=$(curl -s -X PATCH \
             -H "Authorization: Bearer $RENDER_API_KEY" \
             -H "Content-Type: application/json" \
             -d '{
               "autoDeploy": "yes",
               "image": {
                 "ownerId": "'"$OWNER_ID"'",
-                "imagePath": "'"$DOCKER_REPO:$IMAGE_TAG"'"
+                "imagePath": "'"$FULL_IMAGE_NAME"'"
               }
             }' \
-            https://api.render.com/v1/services/$SERVICE_ID
+            https://api.render.com/v1/services/$SERVICE_ID)
+          echo "Deployment response: $response"
+  
+      - name: Check Render Deployment Status
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          SERVICE_ID: ${{ env.SERVICE_ID }}
+        run: |
+          sleep 30
+          response=$(curl -s -H "Authorization: Bearer $RENDER_API_KEY" https://api.render.com/v1/services/$SERVICE_ID)
+          deploy_status=$(echo $response | jq -r '.status')
+          echo "Render service deployment status: $deploy_status"
+          if [ "$deploy_status" != "live" ]; then
+            echo "Deployment did not succeed!"
+            exit 1
+          fi

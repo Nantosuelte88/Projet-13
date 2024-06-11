@@ -115,6 +115,7 @@ jobs:
           # Construire le nom de l'image avec le tag
           FULL_IMAGE_NAME="$DOCKER_REPO:$IMAGE_TAG"
       
+          # Déployer l'image sur Render
           curl -X POST \
             -H "Authorization: Bearer $RENDER_API_KEY" \
             -H "Content-Type: application/json" \
@@ -123,9 +124,3 @@ jobs:
               "image": "'"$FULL_IMAGE_NAME"'"
             }' \
             https://api.render.com/v1/services/$SERVICE_ID/deploys
-
-      - name: Check Render deployment details
-        run: |
-          deploy_id=$(echo $response | jq -r '.deploy.id')
-          deploy_status=$(curl -s -H "Authorization: Bearer $RENDER_API_KEY" https://api.render.com/v1/deploys/$deploy_id)
-          echo "Render deployment status: $deploy_status" | jq .

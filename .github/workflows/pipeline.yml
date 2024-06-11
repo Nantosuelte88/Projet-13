@@ -71,7 +71,11 @@ jobs:
           DOCKER_REPO: ${{ secrets.DOCKERHUB_USERNAME }}/image-oc-lettings
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          echo "FULL_IMAGE_NAME=$DOCKER_REPO:$IMAGE_TAG" >> $GITHUB_ENV
+          echo "Setting FULL_IMAGE_NAME"
+          export FULL_IMAGE_NAME=$DOCKER_REPO:$IMAGE_TAG
+          echo "FULL_IMAGE_NAME=$FULL_IMAGE_NAME" >> $GITHUB_ENV
+          echo $FULL_IMAGE_NAME
+
       - name: Run Docker container
         env:
           DOCKER_REPO: ${{ secrets.DOCKERHUB_USERNAME }}/image-oc-lettings

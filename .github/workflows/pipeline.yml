@@ -118,7 +118,7 @@ jobs:
         run: echo "DOCKER_OWNER_ID=${{ env.DOCKER_OWNER_ID }}"
       - name: Pre-Deployment Check
         run: |
-          if [ -z "${{ env.SERVICE_ID }}" ] || [ -z "${{ env.DOCKER_OWNER_ID }}" ] || [ -z "${{ github.sha }}" ]; then
+          if [ -z "${{ env.SERVICE_ID }}" ] || [ -z "${{ env.OWNER_ID }}" ] || [ -z "${{ github.sha }}" ]; then
             echo "One of the required variables is not set. Exiting."
             exit 1
           fi

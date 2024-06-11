@@ -122,7 +122,7 @@ jobs:
           OWNER_ID: ${{ env.OWNER_ID }}
           IMAGE_TAG: ${{ github.sha }}          
         run: |
-          if [ -z "${{ SERVICE_ID }}" ] || [ -z "${{ OWNER_ID }}" ] || [ -z "${{ IMAGE_TAG }}" ]; then
+          if [ -z "$SERVICE_ID" ] || [ -z "$OWNER_ID" ] || [ -z "$IMAGE_TAG" ]; then
             echo "One of the required variables is not set. Exiting."
             exit 1
           fi

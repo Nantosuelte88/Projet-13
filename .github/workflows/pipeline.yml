@@ -114,11 +114,15 @@ jobs:
           OWNER_RESPONSE=$(curl -s -H "Authorization: Bearer $RENDER_API_KEY" https://api.render.com/v1/owners)
           OWNER_ID=$(echo $OWNER_RESPONSE | jq -r '.[0].id')
           echo "OWNER_ID=$OWNER_ID" >> $GITHUB_ENV
-      - name: Debug Print DOCKER_OWNER_ID
-        run: echo "DOCKER_OWNER_ID=${{ env.DOCKER_OWNER_ID }}"
+      - name: Debug Print OWNER_ID
+        run: echo "OWNER_ID=${{ env.OWNER_ID }}"
       - name: Pre-Deployment Check
+        env : 
+          SERVICE_ID: ${{ env.SERVICE_ID }}
+          OWNER_ID: ${{ env.OWNER_ID }}
+          IMAGE_TAG: ${{ github.sha }}          
         run: |
-          if [ -z "${{ env.SERVICE_ID }}" ] || [ -z "${{ env.OWNER_ID }}" ] || [ -z "${{ github.sha }}" ]; then
+          if [ -z "${{ SERVICE_ID }}" ] || [ -z "${{ OWNER_ID }}" ] || [ -z "${{ IMAGE_TAG }}" ]; then
             echo "One of the required variables is not set. Exiting."
             exit 1
           fi

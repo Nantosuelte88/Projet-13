@@ -121,9 +121,6 @@ jobs:
           IMAGE_TAG: ${{ github.sha }}
           DOCKER_OWNER_ID: ${{ env.DOCKER_OWNER_ID }}
         run: |
-          # Construire le nom de l'image avec le tag
-          FULL_IMAGE_NAME="$DOCKER_REPO:$IMAGE_TAG"
-      
           curl -X POST \
             -H "Authorization: Bearer $RENDER_API_KEY" \
             -H "Content-Type: application/json" \
@@ -132,7 +129,7 @@ jobs:
               "image": {
                 "ownerId": "'"$DOCKER_OWNER_ID"'",
                 "repository": "'"$DOCKER_REPO"'",
-                "imagePath": "'"$IMAGE_TAG"'"
+                "imagePath": "'"$DOCKER_REPO:$IMAGE_TAG"'"
               }
             }' \
             https://api.render.com/v1/services/$SERVICE_ID/deploys

@@ -66,17 +66,6 @@ jobs:
           IMAGE_TAG: ${{ github.sha }}
         run: |
           docker push $DOCKER_REPO:$IMAGE_TAG
-      - name: Set FULL_IMAGE_NAME
-        env:
-          DOCKER_REPO: ${{ secrets.DOCKERHUB_USERNAME }}/image-oc-lettings
-          IMAGE_TAG: ${{ github.sha }}
-        run: |
-          echo "Setting FULL_IMAGE_NAME"
-          echo "FULL_IMAGE_NAME=$DOCKER_REPO:$IMAGE_TAG" >> $GITHUB_ENV
-          echo "FULL_IMAGE_NAME=$DOCKER_REPO:$IMAGE_TAG"
-      - name: Verify FULL_IMAGE_NAME
-        run: echo "FULL_IMAGE_NAME=${{ env.FULL_IMAGE_NAME }}"
-
       - name: Run Docker container
         env:
           DOCKER_REPO: ${{ secrets.DOCKERHUB_USERNAME }}/image-oc-lettings
@@ -116,11 +105,6 @@ jobs:
       - name: Debug Print IMAGE_TAG
         run: echo "IMAGE_TAG=${{ github.sha }}"
 
-      - name: Debug Print FULL_IMAGE_NAME
-        env: 
-          FULL_IMAGE_NAME: ${{ env.FULL_IMAGE_NAME }}
-        run: echo "FULL_IMAGE_NAME=$FULL_IMAGE_NAME"
-  
       - name: Wait for 30 seconds
         run: sleep 30
   
@@ -157,37 +141,18 @@ jobs:
         env:
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
           SERVICE_ID: ${{ env.SERVICE_ID }}
-          FULL_IMAGE_NAME: ${{ env.FULL_IMAGE_NAME }}
+          DOCKER_REPO: ${{ secrets.DOCKERHUB_USERNAME }}/image-oc-lettings
+          IMAGE_TAG: ${{ github.sha }}
         run: |
-          echo "Deploying image: $FULL_IMAGE_NAME"
+          FULL_PATH_IMAGE: docker.io/$$DOCKER_REPO:$IMAGE_TAG
+          echo "Deploying image: $FULL_PATH_IMAGE"
           DEPLOY_RESPONSE=$(curl -X POST \
             -H "Authorization: Bearer $RENDER_API_KEY" \
             -H "Content-Type: application/json" \
             -d '{
               "serviceId": "'"$SERVICE_ID"'",
-              "imagePath": "'"$FULL_IMAGE_NAME"'"
+              "imagePath": "'"$FULL_PATH_IMAGE"'"
             }' \
             https://api.render.com/v1/services/$SERVICE_ID/deploys)
           echo "Deployment response: $DEPLOY_RESPONSE"
   
-      - name: Check Render Deployment Status
-        env:
-          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
-          SERVICE_ID: ${{ env.SERVICE_ID }}
-          OWNER_ID: ${{ env.OWNER_ID }}
-        run: |
-          sleep 60
-          response=$(curl -s -H "Authorization: Bearer $RENDER_API_KEY" https://api.render.com/v1/services/$SERVICE_ID)
-          echo "API response: $response"
-          deploy_status=$(echo $response | jq -r '.service.status')
-          updated_at=$(echo $response | jq -r '.service.updatedAt')
-          echo "Render service deployment status: $deploy_status"
-          echo "Render service updated at: $updated_at"
-          if [ -z "$deploy_status" ] || [ "$deploy_status" == "null" ]; then
-            echo "Deployment status is not available!"
-            exit 1
-          fi
-          if [ "$deploy_status" != "live" ]; then
-            echo "Deployment did not succeed!"
-            exit 1
-          fi

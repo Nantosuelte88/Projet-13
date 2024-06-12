@@ -152,14 +152,11 @@ jobs:
           import os
           import requests
           
-          url = f"https://api.render.com/v1/services/{os.getenv('SERVICE_ID')}"
+          url = f"https://api.render.com/v1/services/{os.getenv('SERVICE_ID')}/deploys"
           
           payload = {
-              "autoDeploy": "yes",
-              "image": {
-                  "ownerId": os.getenv('OWNER_ID'),
-                  "imagePath": os.getenv('FULL_PATH_IMAGE')
-              }
+              "clearCache": "do_not_clear",
+              "imageUrl": os.getenv('FULL_PATH_IMAGE')
           }
           headers = {
               "accept": "application/json",

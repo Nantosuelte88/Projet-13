@@ -100,14 +100,6 @@ jobs:
           fi
           
           echo "SERVICE_ID=$SERVICE_ID" >> $GITHUB_ENV
-      - name: Debug Print SERVICE_ID
-        run: echo "SERVICE_ID=${{ env.SERVICE_ID }}"
-      - name: Debug Print IMAGE_TAG
-        run: echo "IMAGE_TAG=${{ github.sha }}"
-
-      - name: Wait for 30 seconds
-        run: sleep 30
-  
       - name: Get Owner ID
         id: get_owner_id
         env:
@@ -122,10 +114,6 @@ jobs:
             exit 1
           fi
           echo "OWNER_ID=$OWNER_ID" >> $GITHUB_ENV
-  
-      - name: Debug Print OWNER_ID
-        run: echo "OWNER_ID=${{ env.OWNER_ID }}"
-  
       - name: Pre-Deployment Check
         env:
           SERVICE_ID: ${{ env.SERVICE_ID }}
@@ -136,11 +124,6 @@ jobs:
             echo "One of the required variables is not set. Exiting."
             exit 1
           fi
-
-      - name: Install Requests
-        run: |
-          pip install requests
-  
       - name: Deploy to Render
         env:
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}

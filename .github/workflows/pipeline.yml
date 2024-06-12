@@ -141,15 +141,19 @@ jobs:
         env:
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
           SERVICE_ID: ${{ env.SERVICE_ID }}
+          OWNER_ID: ${{ env.OWNER_ID }}
           FULL_PATH_IMAGE: docker.io/${{ secrets.DOCKERHUB_USERNAME }}/image-oc-lettings:${{ github.sha }}
         run: |
           echo "Deploying image: $FULL_PATH_IMAGE"
-          DEPLOY_RESPONSE=$(curl -X POST \
+          DEPLOY_RESPONSE=$(curl -X PATCH \
             -H "Authorization: Bearer $RENDER_API_KEY" \
             -H "Content-Type: application/json" \
             -d '{
-              "serviceId": "'"$SERVICE_ID"'",
-              "imagePath": "'"$FULL_PATH_IMAGE"'"
+              "autoDeploy": "yes",
+              "image": {
+                "ownerId": "'"$OWNER_ID"'",
+                "imagePath": "'"$FULL_PATH_IMAGE"'"
+              }
             }' \
             https://api.render.com/v1/services/$SERVICE_ID/deploys)
           echo "Deployment response: $DEPLOY_RESPONSE"

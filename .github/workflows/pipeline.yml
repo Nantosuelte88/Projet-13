@@ -117,7 +117,9 @@ jobs:
         run: echo "IMAGE_TAG=${{ github.sha }}"
 
       - name: Debug Print FULL_IMAGE_NAME
-        run: echo "FULL_IMAGE_NAME=${{ env.FULL_IMAGE_NAME }}"
+        env: 
+          FULL_IMAGE_NAME: ${{ env.FULL_IMAGE_NAME }}
+        run: echo "FULL_IMAGE_NAME=$FULL_IMAGE_NAME"
   
       - name: Wait for 30 seconds
         run: sleep 30

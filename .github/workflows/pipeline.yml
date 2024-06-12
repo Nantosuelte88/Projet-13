@@ -141,10 +141,8 @@ jobs:
         env:
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
           SERVICE_ID: ${{ env.SERVICE_ID }}
-          DOCKER_REPO: ${{ secrets.DOCKERHUB_USERNAME }}/image-oc-lettings
-          IMAGE_TAG: ${{ github.sha }}
+          FULL_PATH_IMAGE: docker.io/${{ secrets.DOCKERHUB_USERNAME }}/image-oc-lettings:${{ github.sha }}
         run: |
-          FULL_PATH_IMAGE: docker.io/$$DOCKER_REPO:$IMAGE_TAG
           echo "Deploying image: $FULL_PATH_IMAGE"
           DEPLOY_RESPONSE=$(curl -X POST \
             -H "Authorization: Bearer $RENDER_API_KEY" \

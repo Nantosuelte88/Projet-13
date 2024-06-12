@@ -144,8 +144,8 @@ jobs:
       - name: Deploy to Render
         env:
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
-          SERVICE_ID: ${{ secrets.SERVICE_ID }}
-          OWNER_ID: ${{ secrets.OWNER_ID }}
+          SERVICE_ID: ${{ env.SERVICE_ID }}
+          OWNER_ID: ${{ env.OWNER_ID }}
           FULL_PATH_IMAGE: docker.io/${{ secrets.DOCKERHUB_USERNAME }}/image-oc-lettings:${{ github.sha }}
         run: |
           python - <<EOF

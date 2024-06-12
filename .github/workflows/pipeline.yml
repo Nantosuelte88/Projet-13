@@ -136,25 +136,38 @@ jobs:
             echo "One of the required variables is not set. Exiting."
             exit 1
           fi
+
+      - name: Install Requests
+        run: |
+          pip install requests
   
       - name: Deploy to Render
         env:
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
-          SERVICE_ID: ${{ env.SERVICE_ID }}
-          OWNER_ID: ${{ env.OWNER_ID }}
+          SERVICE_ID: ${{ secrets.SERVICE_ID }}
+          OWNER_ID: ${{ secrets.OWNER_ID }}
           FULL_PATH_IMAGE: docker.io/${{ secrets.DOCKERHUB_USERNAME }}/image-oc-lettings:${{ github.sha }}
         run: |
-          echo "Deploying image: $FULL_PATH_IMAGE"
-          DEPLOY_RESPONSE=$(curl -X PATCH \
-            -H "Authorization: Bearer $RENDER_API_KEY" \
-            -H "Content-Type: application/json" \
-            -d '{
+          python - <<EOF
+          import os
+          import requests
+          
+          url = f"https://api.render.com/v1/services/{os.getenv('SERVICE_ID')}"
+          
+          payload = {
               "autoDeploy": "yes",
               "image": {
-                "ownerId": "'"$OWNER_ID"'",
-                "imagePath": "'"$FULL_PATH_IMAGE"'"
+                  "ownerId": os.getenv('OWNER_ID'),
+                  "imagePath": os.getenv('FULL_PATH_IMAGE')
               }
-            }' \
-            https://api.render.com/v1/services/$SERVICE_ID/deploys)
-          echo "Deployment response: $DEPLOY_RESPONSE"
-  
+          }
+          headers = {
+              "accept": "application/json",
+              "content-type": "application/json",
+              "authorization": f"Bearer {os.getenv('RENDER_API_KEY')}"
+          }
+          
+          response = requests.patch(url, json=payload, headers=headers)
+          
+          print("Deployment response:", response.text)
+          EOF

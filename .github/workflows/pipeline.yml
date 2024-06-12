@@ -148,23 +148,21 @@ jobs:
           OWNER_ID: ${{ env.OWNER_ID }}
           FULL_PATH_IMAGE: docker.io/${{ secrets.DOCKERHUB_USERNAME }}/image-oc-lettings:${{ github.sha }}
         run: |
-          python - <<EOF
-          import os
-          import requests
-          
-          url = f"https://api.render.com/v1/services/{os.getenv('SERVICE_ID')}/deploys"
-          
-          payload = {
+          echo "Deploying image: $FULL_PATH_IMAGE"
+          DEPLOY_RESPONSE=$(curl -X POST \
+            -H "Authorization: Bearer $RENDER_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d '{
               "clearCache": "do_not_clear",
-              "imageUrl": os.getenv('FULL_PATH_IMAGE')
-          }
-          headers = {
-              "accept": "application/json",
-              "content-type": "application/json",
-              "authorization": f"Bearer {os.getenv('RENDER_API_KEY')}"
-          }
-          
-          response = requests.patch(url, json=payload, headers=headers)
-          
-          print("Deployment response:", response.text)
-          EOF
+              "imageUrl": "'"$FULL_PATH_IMAGE"'"
+            }' \
+            https://api.render.com/v1/services/$SERVICE_ID/deploys)
+          echo "Deployment response: $DEPLOY_RESPONSE"
+          if [ -z "$DEPLOY_RESPONSE" ]; then
+            echo "Error: Deployment response is empty"
+            exit 1
+          fi
+          if [[ $DEPLOY_RESPONSE == *"error"* ]]; then
+            echo "Error in deployment: $DEPLOY_RESPONSE"
+            exit 1
+          fi

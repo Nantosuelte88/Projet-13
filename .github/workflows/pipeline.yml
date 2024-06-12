@@ -100,11 +100,10 @@ jobs:
           RENDER_SERVICE_NAME: ${{ secrets.RENDER_SERVICE_NAME }}
         run: |
           response=$(curl -s -H "Authorization: Bearer $RENDER_API_KEY" https://api.render.com/v1/services)
+          echo "API Response: $response"
           
-          # Extract the service ID
           SERVICE_ID=$(echo $response | jq -r --arg NAME "$RENDER_SERVICE_NAME" '.[] | select(.service.name==$NAME) | .service.id')
           
-          # Check if SERVICE_ID is empty
           if [ -z "$SERVICE_ID" ]; then
             echo "Service ID not found!"
             exit 1
@@ -171,14 +170,14 @@ jobs:
       - name: Check Render Deployment Status
         env:
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
-          SERVICE_ID: ${{ secrets.SERVICE_ID }}
+          SERVICE_ID: ${{ env.SERVICE_ID }}
           OWNER_ID: ${{ env.OWNER_ID }}
         run: |
-          sleep 30
+          sleep 60
           response=$(curl -s -H "Authorization: Bearer $RENDER_API_KEY" https://api.render.com/v1/services/$SERVICE_ID)
           echo "API response: $response"
-          deploy_status=$(echo $response | jq -r '.status')
-          updated_at=$(echo $response | jq -r '.updatedAt')
+          deploy_status=$(echo $response | jq -r '.service.status')
+          updated_at=$(echo $response | jq -r '.service.updatedAt')
           echo "Render service deployment status: $deploy_status"
           echo "Render service updated at: $updated_at"
           if [ -z "$deploy_status" ] || [ "$deploy_status" == "null" ]; then

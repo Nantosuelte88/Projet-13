@@ -1,0 +1,21 @@
+version: 2
+
+# Configuration de la construction
+build:
+  os: ubuntu-20.04
+  tools:
+    python: "3.12.1"  # Vous pouvez ajuster cette version selon vos besoins
+
+# Configuration Python
+python:
+  version: 3.12.1  # Assurez-vous que cette version correspond à celle que vous utilisez
+  install:
+    - requirements: requirements.txt
+
+# Configuration Sphinx
+sphinx:
+  configuration: doc/source/conf.py
+
+# Configuration du format de sortie
+formats:
+  - html

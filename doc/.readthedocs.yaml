@@ -18,4 +18,4 @@ sphinx:
 
 # Configuration du format de sortie
 formats:
-  - html
+  - htmlzip

@@ -5,7 +5,7 @@
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
-import sphinx_rtd_theme
+import sphinx_rtd_theme  # noqa: F401
 
 project = 'Documentation oc lettings'
 copyright = '2024, Deborah Druine'
@@ -17,10 +17,10 @@ author = 'Deborah Druine'
 extensions = []
 
 templates_path = ['_templates']
-exclude_patterns = [    
+exclude_patterns = [
     'sphinx.ext.autodoc',
     'sphinx.ext.napoleon',
-    'sphinx.ext.viewcode',]
+    'sphinx.ext.viewcode']
 
 language = 'fr'
 

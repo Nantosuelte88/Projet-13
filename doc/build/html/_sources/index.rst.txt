@@ -15,7 +15,6 @@ Welcome to Documentation oc lettings's documentation!
    demarrage_rapide
    technologies
    base_de_donnees
-   interfaces
    utilisation
    deploiement
 

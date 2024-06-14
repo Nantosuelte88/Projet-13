@@ -3,9 +3,9 @@ Structure de la base de données et des modèles
 
 La base de données est structurée comme suit :
 
-- **Profile** : Représente les utilisateurs de l'application.
-- **Letting** : Représente les annonces de location.
-- **Address** : Contient les adresses des biens immobiliers.
+- **Profile** : Représente les profils des utilisateurs de l'application. Chaque profil est lié à un utilisateur Django via une relation OneToOne. Un profil contient également une ville préférée.
+- **Letting** : Représente les annonces de location. Chaque annonce est associée à une adresse unique via une relation OneToOne.
+- **Address** : Contient les adresses des biens immobiliers. Les adresses comprennent le numéro de rue, le nom de la rue, la ville, l'état, le code postal et le code ISO du pays.
 
 Exemple de modèle :
 
@@ -18,6 +18,9 @@ Exemple de modèle :
     logger = logging.getLogger(__name__)
 
     class Address(models.Model):
+        """
+        Modèle représentant une adresse.
+        """
         number = models.PositiveIntegerField(validators=[MaxValueValidator(9999)])
         street = models.CharField(max_length=64)
         city = models.CharField(max_length=64)
@@ -25,32 +28,62 @@ Exemple de modèle :
         zip_code = models.PositiveIntegerField(validators=[MaxValueValidator(99999)])
         country_iso_code = models.CharField(max_length=3, validators=[MinLengthValidator(3)])
 
-        def save(self, *args, **kwargs):
-            logger.info("Enregistrement de l'adresse : %s", str(self))
-            super().save(*args, **kwargs)
-
-        def delete(self, *args, **kwargs):
-            logger.info("Suppression de l'adresse : %s", str(self))
-            super().delete(*args, **kwargs)
-
-        class Meta:
-            verbose_name_plural = "Addresses"
-
-        def __str__(self):
-            return f'{self.number} {self.street}'
-
 
     class Letting(models.Model):
+        """
+        Modèle représentant une location.
+        """
         title = models.CharField(max_length=256)
         address = models.OneToOneField(Address, on_delete=models.CASCADE)
 
-        def save(self, *args, **kwargs):
-            logger.info("Enregistrement de la location : %s", str(self))
-            super().save(*args, **kwargs)
 
-        def delete(self, *args, **kwargs):
-            logger.info("Suppression de la location : %s", str(self))
-            super().delete(*args, **kwargs)
+    class Profile(models.Model):
+        """
+        Modèle pour les profils utilisateur.
+        """
+        user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profiles_profile')
+        favorite_city = models.CharField(max_length=64, blank=True)
 
-        def __str__(self):
-            return self.title
+
+
+Diagramme Entité/Relation
+=========================
+
+Pour visualiser les relations entre les différents modèles, nous pouvons créer un diagramme entité/relation (ERD). Voici la description des relations:
+
+1. **Profile** a une relation OneToOne avec **User**.
+2. **Letting** a une relation OneToOne avec **Address**.
+
+.. mermaid::
+
+    erDiagram
+        USER ||--o{ PROFILE : has
+        PROFILE {
+            integer id
+            integer user_id
+            string favorite_city
+        }
+
+        LETTING ||--|| ADDRESS : has
+        LETTING {
+            integer id
+            string title
+            integer address_id
+        }
+        
+        ADDRESS {
+            integer id
+            integer number
+            string street
+            string city
+            string state
+            integer zip_code
+            string country_iso_code
+        }
+
+        USER {
+            integer id
+            string username
+            string password
+            string email
+        }

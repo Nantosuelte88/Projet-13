@@ -121,6 +121,7 @@ Pour le déploiement de cette application, nous utilisons le service Render. Pou
 
    - SENTRY_DSN (adresse fournie par votre compte Sentry pour un suivi Sentry, facultatif)
    - DJANGO_ALLOWED_HOSTS (adresse de votre site sans "https://", par exemple "nom-image.onrender.com")
+   - SECRET_KEY (la clé secrete de votre application Django)
 
 3. Une fois les mises à jour prises en compte, accédez à l'adresse de votre site (par exemple, "https://nom-image.onrender.com").
 

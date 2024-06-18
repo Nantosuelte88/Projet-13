@@ -12,7 +12,6 @@ La page d'accueil vous accueille et vous permet de naviguer vers les différente
    :alt: Page d'accueil
    :align: center
 
-
 Index des Profils
 -----------------
 
@@ -21,7 +20,6 @@ La page d'index des profils liste tous les profils utilisateurs disponibles. Vou
 .. image:: _static/media/002.png
    :alt: Index des Profils
    :align: center
-
 
 Page de Profil
 --------------
@@ -32,7 +30,6 @@ Sur la page de profil, vous pouvez voir les informations détaillées d'un utili
    :alt: Page de Profil
    :align: center
 
-
 Index des Locations
 -------------------
 
@@ -41,7 +38,6 @@ La page d'index des locations liste toutes les annonces de location disponibles.
 .. image:: _static/media/004.png
    :alt: Index des Locations
    :align: center
-
 
 Page de Location
 ----------------
@@ -52,10 +48,8 @@ Sur la page de location, vous pouvez voir les informations détaillées d'une an
    :alt: Page de Location
    :align: center
 
-
-
 Navigation et Actions
-=====================
+---------------------
 
 Naviguer et Utiliser les Profils
 --------------------------------
@@ -63,11 +57,8 @@ Naviguer et Utiliser les Profils
 1. Depuis la page d'accueil, cliquez sur le lien vers les profils.
 2. Sur la page d'index des profils, cliquez sur un profil pour voir ses détails.
 
-
 Naviguer et Utiliser les Locations
 ----------------------------------
 
 1. Depuis la page d'accueil, cliquez sur le lien vers les locations.
 2. Sur la page d'index des locations, cliquez sur une annonce pour voir ses détails.
-
-

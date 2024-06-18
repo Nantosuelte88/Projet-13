@@ -48,4 +48,4 @@ Pour installer les requirements :
 9. Installez les dépendances du projet en exécutant
    .. code-block:: sh
 
-        pip install --requirement requirements.txt
+        pip install -r requirements.txt

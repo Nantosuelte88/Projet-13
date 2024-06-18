@@ -21,8 +21,10 @@ Le projet oc lettings utilise les technologies et langages de programmation suiv
 4. Outils et services
    - Git
    - GitHub
+   - GitHub Actions
    - Docker
    - Sentry
+   - Render
 
 5. Outils supplémentaires et packages de développement
    - flake8 (3.7.0)

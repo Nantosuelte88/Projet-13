@@ -19,6 +19,7 @@ Pour le déploiement de cette application, nous utilisons le service Render. Pou
    - RENDER_API_KEY (disponible dans vos paramètres sur le site Render -> API Keys -> Create API Key)
    - SECRET_KEY (qui est la clé secrète de votre application Django)
 
+
 Création de l'image Docker
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -27,6 +28,7 @@ Création de l'image Docker
 2. Effectuez un commit avec cette modification pour déclencher automatiquement la pipeline.
 
 3. Votre image Docker sera créée avec succès !
+
 
 Déploiement sur Render
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -43,6 +45,7 @@ Déploiement sur Render
 
 6. Appuyez sur "Create Web Service" (le déploiement peut prendre un peu de temps).
 
+
 Configuration sur Render
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -55,6 +58,7 @@ Configuration sur Render
 
 3. Une fois les mises à jour prises en compte, accédez à l'adresse de votre site (par exemple, "https://nom-image.onrender.com").
 
+
 Intégration avec GitHub
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -65,6 +69,7 @@ Intégration avec GitHub
 3. Réintégrez la partie "deploy to render" dans le fichier ``pipeline.yml``.
 
 4. Effectuez un commit. En cas de problème, vérifiez vos variables d'environnement GitHub et Render, ou consultez les documentations.
+
 
 Pipeline de déploiement
 ~~~~~~~~~~~~~~~~~~~~~~~~

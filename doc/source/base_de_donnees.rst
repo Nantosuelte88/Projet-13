@@ -7,15 +7,7 @@ La base de données est structurée comme suit :
 - **Letting** : Représente les annonces de location. Chaque annonce est associée à une adresse unique via une relation OneToOne.
 - **Address** : Contient les adresses des biens immobiliers. Les adresses comprennent le numéro de rue, le nom de la rue, la ville, l'état, le code postal et le code ISO du pays.
 
-Exemple de modèle :
-
 .. code-block:: python
-
-    from django.db import models
-    from django.core.validators import MaxValueValidator, MinLengthValidator
-    import logging
-
-    logger = logging.getLogger(__name__)
 
     class Address(models.Model):
         """
@@ -54,36 +46,7 @@ Pour visualiser les relations entre les différents modèles, nous pouvons crée
 1. **Profile** a une relation OneToOne avec **User**.
 2. **Letting** a une relation OneToOne avec **Address**.
 
-.. mermaid::
-
-    erDiagram
-        USER ||--o{ PROFILE : has
-        PROFILE {
-            integer id
-            integer user_id
-            string favorite_city
-        }
-
-        LETTING ||--|| ADDRESS : has
-        LETTING {
-            integer id
-            string title
-            integer address_id
-        }
-        
-        ADDRESS {
-            integer id
-            integer number
-            string street
-            string city
-            string state
-            integer zip_code
-            string country_iso_code
-        }
-
-        USER {
-            integer id
-            string username
-            string password
-            string email
-        }
+.. image:: _static/media/erd.png
+   :alt: Digramme entité relation
+   :align: center
+   
